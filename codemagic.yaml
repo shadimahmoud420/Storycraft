@@ -1,0 +1,74 @@
+# Codemagic CI: builds & uploads StoryCraft without needing a Mac.
+# Setup steps are in docs/RELEASE_GUIDE.md (section "بدون جهاز Mac").
+workflows:
+  ios-release:
+    name: iOS → TestFlight / App Store
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Name you gave the App Store Connect API key in Codemagic settings.
+      app_store_connect: StoryCraft ASC
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.storycraft.storycraft
+      vars:
+        # App Store Connect → App → General → App Information → Apple ID
+        APP_STORE_APPLE_ID: 0000000000
+    scripts:
+      - name: Native project setup
+        script: |
+          [ -d ios/Runner ] || bash tool/setup.sh
+          flutter pub get
+      - name: Code signing
+        script: xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          BUILD=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))
+          flutter build ipa --release \
+            --build-number=$BUILD \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-release:
+    name: Android → Google Play (internal testing)
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+      # Upload keystore added in Codemagic → Team → Code signing identities.
+      android_signing:
+        - storycraft_upload_key
+      groups:
+        # Holds GCLOUD_SERVICE_ACCOUNT_CREDENTIALS (Play Console service account JSON).
+        - google_play
+    scripts:
+      - name: Native project setup
+        script: |
+          [ -d android/app ] && [ -f android/app/build.gradle.kts ] || bash tool/setup.sh
+          flutter pub get
+      - name: Signing properties
+        script: |
+          cat > android/key.properties <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          EOF
+      - name: Build AAB
+        script: flutter build appbundle --release --build-number=$PROJECT_BUILD_NUMBER
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true

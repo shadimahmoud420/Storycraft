@@ -1,0 +1,56 @@
+name: storycraft
+description: "StoryCraft – design Instagram-ready stories with Arabic & English fonts, colors, gradients and one-tap photo enhancement."
+publish_to: 'none'
+
+# version: <versionName>+<versionCode/buildNumber>
+# Increase the number after + with every upload to Google Play / App Store.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  image_picker: ^1.1.2
+  google_fonts: ^6.2.1
+  image: ^4.3.0
+  path_provider: ^2.1.5
+  share_plus: ^11.0.0
+  gal: ^2.3.0
+  shared_preferences: ^2.3.3
+
+  instagram_story_share:
+    path: packages/instagram_story_share
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/
+
+# dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#5B31DC"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+
+# dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#5B31DC"
+  image: assets/icon/icon_foreground.png
+  android_12:
+    color: "#5B31DC"
+    image: assets/icon/icon_foreground.png

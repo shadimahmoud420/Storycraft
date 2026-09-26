@@ -1,0 +1,21 @@
+name: instagram_story_share
+description: Shares an image directly to the Instagram Stories composer (Android & iOS).
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.storycraft.instagram_story_share
+        pluginClass: InstagramStorySharePlugin
+      ios:
+        pluginClass: InstagramStorySharePlugin
