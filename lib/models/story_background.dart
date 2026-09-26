@@ -30,6 +30,7 @@ class StoryBackground {
           gradientAngle: angle,
         );
 
+  // ignore: prefer_const_constructors_in_immutables
   StoryBackground.image(Uint8List bytes)
       : this._(
           kind: BackgroundKind.image,
