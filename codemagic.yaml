@@ -12,10 +12,11 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.shadimahmoud.storycraft
+      groups:
+        # Holds CERTIFICATE_PRIVATE_KEY (see docs/RELEASE_GUIDE.md).
+        - ios_signing
       vars:
+        BUNDLE_ID: com.shadimahmoud.storycraft
         # App Store Connect → App → General → App Information → Apple ID
         APP_STORE_APPLE_ID: 6816655860
     scripts:
@@ -24,10 +25,21 @@ workflows:
           [ -d ios/Runner ] || bash tool/setup.sh
           flutter pub get
       - name: Code signing
-        script: xcode-project use-profiles
+        script: |
+          # Creates (first run) or reuses the distribution certificate and
+          # App Store provisioning profile through the ASC integration.
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: |
-          BUILD=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))
+          # First upload has no previous build: start from 0.
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          BUILD=$((${LATEST:-0} + 1))
           flutter build ipa --release \
             --build-number=$BUILD \
             --export-options-plist=/Users/builder/export_options.plist
