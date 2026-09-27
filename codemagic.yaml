@@ -17,7 +17,7 @@ workflows:
         bundle_identifier: com.shadimahmoud.storycraft
       vars:
         # App Store Connect → App → General → App Information → Apple ID
-        APP_STORE_APPLE_ID: 0000000000
+        APP_STORE_APPLE_ID: 6816655860
     scripts:
       - name: Native project setup
         script: |
