@@ -20,5 +20,5 @@ class AppConfig {
   /// memory-safe on older phones while staying sharper than 1920 px).
   static const maxImageEdge = 2400;
 
-  static const privacyPolicyUrl = 'https://example.com/storycraft/privacy';
+  static const privacyPolicyUrl = 'https://shadimahmoud420.github.io/Storycraft/privacy-policy.html';
 }
