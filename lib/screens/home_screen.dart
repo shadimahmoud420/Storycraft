@@ -5,9 +5,14 @@ import '../core/locale_controller.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/palettes.dart';
+import '../data/templates.dart';
 import '../models/story_background.dart';
+import '../models/story_layer.dart';
+import '../services/draft_store.dart';
 import '../services/image_processing.dart';
+import 'brand_kit_screen.dart';
 import 'editor_screen.dart';
+import 'templates_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.localeController});
@@ -45,15 +50,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _openEditor(StoryBackground bg, {bool openBackgroundSheet = false}) {
+  void _openEditor(
+    StoryBackground bg, {
+    List<StoryLayer> layers = const [],
+    String? draftId,
+    bool openBackgroundSheet = false,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => EditorScreen(
           initialBackground: bg,
+          initialLayers: layers,
+          draftId: draftId,
           openBackgroundSheet: openBackgroundSheet,
         ),
       ),
     );
+  }
+
+  Future<void> _openTemplates() async {
+    final template = await Navigator.of(context).push<StoryTemplate>(
+      MaterialPageRoute(builder: (_) => const TemplatesScreen()),
+    );
+    if (template == null || !mounted) return;
+    _openEditor(template.background, layers: template.buildLayers());
+  }
+
+  Future<void> _openDraft(String id) async {
+    final draft = await DraftStore.instance.load(id);
+    if (draft == null || !mounted) return;
+    _openEditor(draft.background, layers: draft.layers, draftId: id);
   }
 
   @override
@@ -72,14 +98,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                   children: [
-                    Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: TextButton.icon(
-                        onPressed: () => widget.localeController
-                            .toggle(Localizations.localeOf(context)),
-                        icon: const Icon(Icons.translate_rounded),
-                        label: Text(s.language),
-                      ),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const BrandKitScreen()),
+                          ),
+                          icon: const Icon(Icons.storefront_rounded),
+                          label: Text(s.brandKit),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: () => widget.localeController
+                              .toggle(Localizations.localeOf(context)),
+                          icon: const Icon(Icons.translate_rounded),
+                          label: Text(s.language),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     const _Logo(),
@@ -97,7 +133,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+                    _DraftsRow(onOpen: _openDraft),
+                    _StartCard(
+                      icon: Icons.dashboard_customize_rounded,
+                      title: s.templates,
+                      subtitle: s.templatesHint,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFF7971E), Color(0xFFE8505B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      onTap: _openTemplates,
+                    ),
+                    const SizedBox(height: 14),
                     _StartCard(
                       icon: Icons.photo_library_rounded,
                       title: s.fromPhoto,
@@ -251,6 +302,88 @@ class _StartCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Horizontal list of saved drafts (hidden when there are none).
+class _DraftsRow extends StatelessWidget {
+  const _DraftsRow({required this.onOpen});
+
+  final ValueChanged<String> onOpen;
+
+  Future<void> _confirmDelete(BuildContext context, String id) async {
+    final s = S.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(s.deleteDraft),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await DraftStore.instance.delete(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return ValueListenableBuilder<int>(
+      valueListenable: DraftStore.instance.revision,
+      builder: (context, revision, _) => FutureBuilder<List<DraftSummary>>(
+        key: ValueKey(revision),
+        future: DraftStore.instance.list(),
+        builder: (context, snap) {
+          final drafts = snap.data ?? const <DraftSummary>[];
+          if (drafts.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.drafts, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 142,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: drafts.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 10),
+                    itemBuilder: (context, i) {
+                      final d = drafts[i];
+                      return GestureDetector(
+                        onTap: () => onOpen(d.id),
+                        onLongPress: () => _confirmDelete(context, d.id),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 80,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            child: d.thumbnail == null
+                                ? const Icon(Icons.image_outlined)
+                                : Image.memory(d.thumbnail!, fit: BoxFit.cover),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

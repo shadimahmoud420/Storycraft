@@ -67,6 +67,13 @@ class StoryFonts {
     StoryFont('Righteous', arabic: false),
   ];
 
+  static const all = <StoryFont>[...arabic, ...english];
+
+  /// Resolves a saved family name back to a font (drafts, brand kit).
+  static StoryFont byFamily(String family) =>
+      all.where((f) => f.family == family).firstOrNull ??
+      StoryFont(family, arabic: false);
+
   static StoryFont defaultFor(String text) =>
       _hasArabic(text) ? arabic.first : english.first;
 

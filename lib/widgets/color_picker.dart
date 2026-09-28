@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/strings.dart';
 import '../data/palettes.dart';
+import '../services/brand_kit.dart';
 
 /// Horizontal row of color swatches, starting with a "custom color" button.
 class ColorRow extends StatelessWidget {
@@ -9,17 +10,28 @@ class ColorRow extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onChanged,
-    this.colors = Palettes.classic,
+    this.colors,
     this.size = 36,
   });
 
   final Color? selected;
   final ValueChanged<Color> onChanged;
-  final List<Color> colors;
+  /// Defaults to the brand kit colors followed by the classic palette.
+  final List<Color>? colors;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: BrandKitStore.instance,
+      builder: (context, kit, _) => _build(context, [
+        ...kit.colors,
+        ...(colors ?? Palettes.classic).where((c) => !kit.colors.contains(c)),
+      ]),
+    );
+  }
+
+  Widget _build(BuildContext context, List<Color> colors) {
     return SizedBox(
       height: size + 8,
       child: ListView.separated(

@@ -1,26 +1,43 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
-import '../models/text_layer.dart';
+import '../models/story_layer.dart';
+import '../services/brand_kit.dart';
+import '../services/draft_store.dart';
 import '../services/image_processing.dart';
 import '../services/story_exporter.dart';
 import '../state/editor_controller.dart';
 import '../widgets/background_sheet.dart';
+import '../widgets/color_picker.dart';
+import '../widgets/quotes_sheet.dart';
+import '../widgets/sticker_sheet.dart';
 import '../widgets/story_canvas.dart';
 import '../widgets/text_editor_sheet.dart';
+import 'brand_kit_screen.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
     super.key,
     required this.initialBackground,
+    this.initialLayers = const [],
+    this.draftId,
     this.openBackgroundSheet = false,
   });
 
   final StoryBackground initialBackground;
+  final List<StoryLayer> initialLayers;
+
+  /// Set when reopening a saved draft; a new id is created otherwise.
+  final String? draftId;
   final bool openBackgroundSheet;
 
   @override
@@ -28,15 +45,20 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  late final EditorController _controller =
-      EditorController(widget.initialBackground);
+  late final EditorController _controller = EditorController(
+    widget.initialBackground,
+    layers: widget.initialLayers,
+  );
   final _boundaryKey = GlobalKey();
   late final _exporter = StoryExporter(_boundaryKey);
+  late final String _draftId = widget.draftId ?? DraftStore.instance.newId();
+  Timer? _autosave;
   bool _exporting = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_scheduleAutosave);
     if (widget.openBackgroundSheet) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => mounted ? _openBackground() : null);
@@ -45,6 +67,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    _autosave?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -55,43 +78,135 @@ class _EditorScreenState extends State<EditorScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  // --- Drafts ---------------------------------------------------------------
+
+  void _scheduleAutosave() {
+    if (!_controller.hasChanges) return;
+    _autosave?.cancel();
+    _autosave = Timer(const Duration(seconds: 2), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    _autosave?.cancel();
+    if (!_controller.hasChanges || _controller.isBusy) return;
+    _controller.markSaved();
+    Uint8List? thumb;
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary != null && !boundary.debugNeedsPaint) {
+        final image = await boundary.toImage(pixelRatio: 0.5);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        thumb = data?.buffer.asUint8List();
+      }
+    } catch (_) {}
+    try {
+      await DraftStore.instance.save(
+        _draftId,
+        _controller.background,
+        _controller.layers,
+        thumbnail: thumb,
+      );
+    } catch (_) {}
+  }
+
   // --- Actions --------------------------------------------------------------
+
+  StoryFont _defaultFont(S s) =>
+      BrandKitStore.instance.value.font ??
+      (s.isArabic ? StoryFonts.arabic.first : StoryFonts.english.first);
 
   Future<void> _addText() async {
     final s = S.of(context);
-    final draft = TextLayer(
+    final draft = StoryLayer(
       id: 'draft',
-      text: '',
-      font: s.isArabic ? StoryFonts.arabic.first : StoryFonts.english.first,
+      font: _defaultFont(s),
       color: _controller.suggestTextColor(),
       shadow: _controller.background.isImage,
     );
     final result = await showTextEditorSheet(context, draft);
     if (result == null) return;
-    final layer = _controller.addText(result.text, font: result.font);
-    _controller.updateLayer(layer.id, (l) {
-      l
-        ..color = result.color
-        ..fontSize = result.fontSize
-        ..align = result.align
-        ..highlight = result.highlight
-        ..shadow = result.shadow;
-    });
+    _controller.addLayer(result);
   }
 
-  Future<void> _editLayer(TextLayer layer) async {
-    final result = await showTextEditorSheet(context, layer);
-    if (result == null) return;
-    _controller.updateLayer(layer.id, (l) {
-      l
-        ..text = result.text
-        ..font = result.font
-        ..color = result.color
-        ..fontSize = result.fontSize
-        ..align = result.align
-        ..highlight = result.highlight
-        ..shadow = result.shadow;
-    });
+  Future<void> _addQuote() async {
+    final text = await showQuotesSheet(context);
+    if (text == null || !mounted) return;
+    final kitFont = BrandKitStore.instance.value.font;
+    final font = kitFont != null && kitFont.arabic == StoryFonts.hasArabic(text)
+        ? kitFont
+        : StoryFonts.hasArabic(text)
+            ? StoryFonts.byFamily('Amiri')
+            : StoryFonts.byFamily('Playfair Display');
+    _controller.addText(text, font: font, fontSize: 28);
+  }
+
+  Future<void> _addSticker() async {
+    final choice = await showStickerSheet(context);
+    switch (choice) {
+      case EmojiChoice(:final text):
+        _controller.addEmoji(text);
+      case ShapeChoice(:final shape):
+        _controller.addShape(shape);
+      case null:
+        break;
+    }
+  }
+
+  Future<void> _editLayer(StoryLayer layer) async {
+    switch (layer.kind) {
+      case LayerKind.text:
+        final result = await showTextEditorSheet(context, layer);
+        if (result == null) return;
+        _controller.updateLayer(layer.id, (l) {
+          l
+            ..text = result.text
+            ..font = result.font
+            ..color = result.color
+            ..fontSize = result.fontSize
+            ..align = result.align
+            ..highlight = result.highlight
+            ..shadow = result.shadow;
+        });
+      case LayerKind.shape:
+      case LayerKind.emoji:
+        await _editColor(layer);
+      case LayerKind.image:
+        break;
+    }
+  }
+
+  /// Color for shapes and symbols, applied live (one undo step).
+  Future<void> _editColor(StoryLayer layer) async {
+    final s = S.of(context);
+    _controller.checkpoint();
+    await showModalBottomSheet<void>(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(s.color, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                ColorRow(
+                  selected: layer.color,
+                  onChanged: (c) {
+                    _controller.updateLayer(
+                        layer.id, (l) => l.color = c, record: false);
+                    setSheet(() {});
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _openBackground() => showBackgroundSheet(
@@ -99,6 +214,86 @@ class _EditorScreenState extends State<EditorScreen> {
         controller: _controller,
         onPickPhoto: _pickPhoto,
       );
+
+  Future<void> _openBrandKit() async {
+    final s = S.of(context);
+    final kit = BrandKitStore.instance.value;
+    if (kit.isEmpty) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const BrandKitScreen()),
+      );
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (kit.logo != null)
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _controller.addImage(kit.logo!);
+                  },
+                  icon: const Icon(Icons.add_photo_alternate_rounded),
+                  label: Text(s.addLogo),
+                ),
+              if (kit.colors.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(s.useAsBackground),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (final c in kit.colors)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _controller.setBackground(StoryBackground.solid(c));
+                        },
+                        child: CircleAvatar(radius: 20, backgroundColor: c),
+                      ),
+                    if (kit.colors.length > 1)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _controller.setBackground(
+                              StoryBackground.gradient(kit.colors));
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(colors: kit.colors),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const BrandKitScreen(),
+                  ));
+                },
+                icon: const Icon(Icons.tune_rounded),
+                label: Text(s.brandKit),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _pickPhoto() async {
     final s = S.of(context);
@@ -180,27 +375,19 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
-  Future<bool> _confirmLeave() async {
-    if (!_controller.hasChanges) return true;
+  /// Leaving never loses work: unsaved changes go to "My drafts".
+  Future<void> _leave() async {
     final s = S.of(context);
-    final leave = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(s.discardTitle),
-        content: Text(s.discardBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(s.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(s.discard),
-          ),
-        ],
-      ),
-    );
-    return leave ?? false;
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final hadChanges = _controller.hasChanges;
+    _controller.select(null);
+    await WidgetsBinding.instance.endOfFrame;
+    await _saveDraft();
+    if (hadChanges) {
+      messenger.showSnackBar(SnackBar(content: Text(s.draftSaved)));
+    }
+    navigator.pop();
   }
 
   // --- UI -------------------------------------------------------------------
@@ -210,10 +397,8 @@ class _EditorScreenState extends State<EditorScreen> {
     final s = S.of(context);
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final navigator = Navigator.of(context);
-        if (await _confirmLeave()) navigator.pop();
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _leave();
       },
       child: Theme(
         data: AppTheme.build(Brightness.dark),
@@ -222,101 +407,134 @@ class _EditorScreenState extends State<EditorScreen> {
           body: SafeArea(
             child: ListenableBuilder(
               listenable: _controller,
-              builder: (context, _) => Column(
-                children: [
-                  _TopBar(
-                    exporting: _exporting,
-                    onClose: () => Navigator.maybePop(context),
-                    onSave: _save,
-                    onShare: _share,
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: StoryCanvas(
-                              controller: _controller,
-                              boundaryKey: _boundaryKey,
-                              onEditLayer: _editLayer,
-                            ),
-                          ),
-                          if (_controller.layers.isEmpty && !_controller.isBusy)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 24,
-                              child: IgnorePointer(
-                                child: Center(child: _Hint(s.tapToAddText)),
+              builder: (context, _) {
+                final c = _controller;
+                final bg = c.background;
+                return Column(
+                  children: [
+                    _TopBar(
+                      exporting: _exporting,
+                      canUndo: c.canUndo,
+                      canRedo: c.canRedo,
+                      onClose: _leave,
+                      onUndo: c.undo,
+                      onRedo: c.redo,
+                      onSave: _save,
+                      onShare: _share,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: StoryCanvas(
+                                controller: c,
+                                boundaryKey: _boundaryKey,
+                                onEditLayer: _editLayer,
                               ),
                             ),
-                          if (_controller.isBusy)
-                            Positioned.fill(child: _BusyOverlay(s.processing)),
-                        ],
+                            if (c.layers.isEmpty && !c.isBusy)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 24,
+                                child: IgnorePointer(
+                                  child: Center(
+                                    child: _Hint(bg.isImage
+                                        ? s.photoHint
+                                        : s.tapToAddText),
+                                  ),
+                                ),
+                              ),
+                            if (c.isBusy)
+                              Positioned.fill(
+                                  child: _BusyOverlay(s.processing)),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  if (_controller.selected != null)
-                    _SelectionBar(
-                      onEdit: () => _editLayer(_controller.selected!),
-                      onDuplicate: () =>
-                          _controller.duplicateLayer(_controller.selectedId!),
-                      onDelete: () =>
-                          _controller.removeLayer(_controller.selectedId!),
-                    ),
-                  _ToolBar(
-                    children: [
-                      _Tool(
-                        icon: Icons.text_fields_rounded,
-                        label: s.text,
-                        onTap: _addText,
+                    if (c.selected != null)
+                      _SelectionBar(
+                        canEdit: c.selected!.kind != LayerKind.image,
+                        editLabel: c.selected!.isText ? s.text : s.style,
+                        onEdit: () => _editLayer(c.selected!),
+                        onDuplicate: () => c.duplicateLayer(c.selectedId!),
+                        onDelete: () => c.removeLayer(c.selectedId!),
                       ),
-                      _Tool(
-                        icon: Icons.palette_rounded,
-                        label: s.background,
-                        onTap: _openBackground,
-                      ),
-                      if (_controller.background.isImage) ...[
+                    _ToolBar(
+                      children: [
                         _Tool(
-                          icon: Icons.wb_sunny_rounded,
-                          label: s.natural,
-                          busy: _controller.busy == ImageOperation.natural,
-                          onTap: _controller.isBusy
-                              ? null
-                              : () => _runImageOp(ImageOperation.natural),
+                          icon: Icons.text_fields_rounded,
+                          label: s.text,
+                          onTap: _addText,
                         ),
                         _Tool(
-                          icon: Icons.auto_awesome_rounded,
-                          label: s.enhance,
-                          highlight: true,
-                          busy: _controller.busy == ImageOperation.enhance,
-                          onTap: _controller.isBusy
-                              ? null
-                              : () => _runImageOp(ImageOperation.enhance),
+                          icon: Icons.format_quote_rounded,
+                          label: s.quotes,
+                          onTap: _addQuote,
                         ),
                         _Tool(
-                          icon: _controller.background.imageFit ==
-                                  ImageFit.cover
-                              ? Icons.fit_screen_rounded
-                              : Icons.crop_portrait_rounded,
-                          label: s.fit,
-                          onTap: _controller.toggleImageFit,
+                          icon: Icons.emoji_emotions_rounded,
+                          label: s.stickers,
+                          onTap: _addSticker,
                         ),
-                        if (_controller.background.isModified)
+                        _Tool(
+                          icon: Icons.palette_rounded,
+                          label: s.background,
+                          onTap: _openBackground,
+                        ),
+                        _Tool(
+                          icon: Icons.storefront_rounded,
+                          label: s.brandKit,
+                          onTap: _openBrandKit,
+                        ),
+                        if (bg.isImage) ...[
                           _Tool(
-                            icon: Icons.undo_rounded,
-                            label: s.original,
-                            onTap: _controller.isBusy
+                            icon: Icons.wb_sunny_rounded,
+                            label: s.natural,
+                            busy: c.busy == ImageOperation.natural,
+                            onTap: c.isBusy
                                 ? null
-                                : _controller.restoreOriginalImage,
+                                : () => _runImageOp(ImageOperation.natural),
                           ),
+                          _Tool(
+                            icon: Icons.auto_awesome_rounded,
+                            label: s.enhance,
+                            highlight: true,
+                            busy: c.busy == ImageOperation.enhance,
+                            onTap: c.isBusy
+                                ? null
+                                : () => _runImageOp(ImageOperation.enhance),
+                          ),
+                          _Tool(
+                            icon: Icons.contrast_rounded,
+                            label: bg.dim == 0
+                                ? s.dim
+                                : '${s.dim} ${(bg.dim * 100).round()}%',
+                            onTap: c.cycleDim,
+                          ),
+                          _Tool(
+                            icon: bg.imageFit == ImageFit.cover
+                                ? Icons.fit_screen_rounded
+                                : Icons.crop_portrait_rounded,
+                            label: s.fit,
+                            onTap: c.toggleImageFit,
+                          ),
+                          if (bg.isModified)
+                            _Tool(
+                              icon: Icons.restore_rounded,
+                              label: s.original,
+                              onTap:
+                                  c.isBusy ? null : c.restoreOriginalImage,
+                            ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -328,13 +546,21 @@ class _EditorScreenState extends State<EditorScreen> {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.exporting,
+    required this.canUndo,
+    required this.canRedo,
     required this.onClose,
+    required this.onUndo,
+    required this.onRedo,
     required this.onSave,
     required this.onShare,
   });
 
   final bool exporting;
+  final bool canUndo;
+  final bool canRedo;
   final VoidCallback onClose;
+  final VoidCallback onUndo;
+  final VoidCallback onRedo;
   final VoidCallback onSave;
   final VoidCallback onShare;
 
@@ -342,13 +568,24 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
       child: Row(
         children: [
           IconButton(
             onPressed: onClose,
             icon: const Icon(Icons.close_rounded),
             tooltip: s.cancel,
+          ),
+          // Undo/redo arrows follow the reading direction automatically.
+          IconButton(
+            onPressed: canUndo ? onUndo : null,
+            icon: const Icon(Icons.undo_rounded),
+            tooltip: s.undo,
+          ),
+          IconButton(
+            onPressed: canRedo ? onRedo : null,
+            icon: const Icon(Icons.redo_rounded),
+            tooltip: s.redo,
           ),
           const Spacer(),
           IconButton.filledTonal(
@@ -473,11 +710,15 @@ class _Tool extends StatelessWidget {
 
 class _SelectionBar extends StatelessWidget {
   const _SelectionBar({
+    required this.canEdit,
+    required this.editLabel,
     required this.onEdit,
     required this.onDuplicate,
     required this.onDelete,
   });
 
+  final bool canEdit;
+  final String editLabel;
   final VoidCallback onEdit;
   final VoidCallback onDuplicate;
   final VoidCallback onDelete;
@@ -491,11 +732,12 @@ class _SelectionBar extends StatelessWidget {
         spacing: 8,
         alignment: WrapAlignment.center,
         children: [
-          ActionChip(
-            avatar: const Icon(Icons.edit_rounded, size: 18),
-            label: Text(s.text),
-            onPressed: onEdit,
-          ),
+          if (canEdit)
+            ActionChip(
+              avatar: const Icon(Icons.edit_rounded, size: 18),
+              label: Text(editLabel),
+              onPressed: onEdit,
+            ),
           ActionChip(
             avatar: const Icon(Icons.copy_rounded, size: 18),
             label: Text(s.duplicate),

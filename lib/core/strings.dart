@@ -62,6 +62,44 @@ class S {
   String get saveFailed => _t('saveFailed');
   String get angle => _t('angle');
 
+  String get templates => _t('templates');
+  String get templatesHint => _t('templatesHint');
+  String get drafts => _t('drafts');
+  String get deleteDraft => _t('deleteDraft');
+  String get draftSaved => _t('draftSaved');
+  String get quotes => _t('quotes');
+  String get stickers => _t('stickers');
+  String get emoji => _t('emoji');
+  String get symbols => _t('symbols');
+  String get shapes => _t('shapes');
+  String get brandKit => _t('brandKit');
+  String get brandKitHint => _t('brandKitHint');
+  String get logo => _t('logo');
+  String get addLogo => _t('addLogo');
+  String get chooseLogo => _t('chooseLogo');
+  String get removeLogo => _t('removeLogo');
+  String get brandColors => _t('brandColors');
+  String get favoriteFont => _t('favoriteFont');
+  String get none => _t('none');
+  String get setUpBrandKit => _t('setUpBrandKit');
+  String get useAsBackground => _t('useAsBackground');
+  String get undo => _t('undo');
+  String get redo => _t('redo');
+  String get dim => _t('dim');
+  String get all => _t('all');
+  String get ramadan => _t('ramadan');
+  String get eid => _t('eid');
+  String get friday => _t('friday');
+  String get morning => _t('morning');
+  String get congrats => _t('congrats');
+  String get graduation => _t('graduation');
+  String get adhkar => _t('adhkar');
+  String get wisdom => _t('wisdom');
+  String get motivation => _t('motivation');
+  String get english => _t('english');
+  String get photoHint => _t('photoHint');
+  String get style => _t('style');
+
   static const _values = <String, Map<String, String>>{
     'ar': {
       'appName': 'StoryCraft',
@@ -111,6 +149,43 @@ class S {
       'tapToAddText': 'اضغط «نص» لإضافة كتابة',
       'saveFailed': 'تعذّر الحفظ، تحقق من صلاحية الصور',
       'angle': 'الاتجاه',
+      'templates': 'قوالب جاهزة',
+      'templatesHint': 'تصاميم للمناسبات بضغطة واحدة',
+      'drafts': 'مسوداتي',
+      'deleteDraft': 'حذف المسودة؟',
+      'draftSaved': 'حُفظ التصميم في مسوداتك',
+      'quotes': 'عبارات',
+      'stickers': 'ملصقات',
+      'emoji': 'إيموجي',
+      'symbols': 'رموز',
+      'shapes': 'أشكال',
+      'brandKit': 'هويتي',
+      'brandKitHint': 'شعارك وألوانك وخطك المفضل في كل تصميم',
+      'logo': 'الشعار',
+      'addLogo': 'أضف الشعار',
+      'chooseLogo': 'اختر صورة الشعار',
+      'removeLogo': 'إزالة الشعار',
+      'brandColors': 'ألوان الهوية',
+      'favoriteFont': 'الخط المفضل',
+      'none': 'بدون',
+      'setUpBrandKit': 'أعدّ هويتك التجارية',
+      'useAsBackground': 'استخدم كخلفية',
+      'undo': 'تراجع',
+      'redo': 'إعادة',
+      'dim': 'تعتيم',
+      'all': 'الكل',
+      'ramadan': 'رمضان',
+      'eid': 'العيد',
+      'friday': 'الجمعة',
+      'morning': 'صباح الخير',
+      'congrats': 'تهنئة',
+      'graduation': 'تخرج',
+      'adhkar': 'أذكار',
+      'wisdom': 'حكم',
+      'motivation': 'تحفيز',
+      'english': 'English',
+      'photoHint': 'اسحب الصورة لتحريكها وكبّرها بإصبعين',
+      'style': 'التنسيق',
     },
     'en': {
       'appName': 'StoryCraft',
@@ -160,6 +235,43 @@ class S {
       'tapToAddText': 'Tap “Text” to start writing',
       'saveFailed': 'Could not save. Check Photos permission',
       'angle': 'Direction',
+      'templates': 'Templates',
+      'templatesHint': 'One-tap designs for every occasion',
+      'drafts': 'My drafts',
+      'deleteDraft': 'Delete this draft?',
+      'draftSaved': 'Saved to your drafts',
+      'quotes': 'Quotes',
+      'stickers': 'Stickers',
+      'emoji': 'Emoji',
+      'symbols': 'Symbols',
+      'shapes': 'Shapes',
+      'brandKit': 'Brand kit',
+      'brandKitHint': 'Your logo, colors and font in every design',
+      'logo': 'Logo',
+      'addLogo': 'Add logo',
+      'chooseLogo': 'Choose logo image',
+      'removeLogo': 'Remove logo',
+      'brandColors': 'Brand colors',
+      'favoriteFont': 'Favorite font',
+      'none': 'None',
+      'setUpBrandKit': 'Set up your brand kit',
+      'useAsBackground': 'Use as background',
+      'undo': 'Undo',
+      'redo': 'Redo',
+      'dim': 'Dim',
+      'all': 'All',
+      'ramadan': 'Ramadan',
+      'eid': 'Eid',
+      'friday': 'Friday',
+      'morning': 'Good morning',
+      'congrats': 'Congrats',
+      'graduation': 'Graduation',
+      'adhkar': 'Adhkar',
+      'wisdom': 'Wisdom',
+      'motivation': 'Motivation',
+      'english': 'English',
+      'photoHint': 'Drag to move the photo, pinch to zoom',
+      'style': 'Style',
     },
   };
 }

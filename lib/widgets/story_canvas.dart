@@ -1,13 +1,11 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import '../core/config.dart';
-import '../data/fonts.dart';
-import '../models/story_background.dart';
-import '../models/text_layer.dart';
+import '../models/story_layer.dart';
 import '../state/editor_controller.dart';
+import 'story_view.dart';
 
 /// The 9:16 story. Everything inside [boundaryKey] is what gets exported,
 /// designed on a fixed 360 x 640 canvas and scaled to fit any screen.
@@ -21,7 +19,7 @@ class StoryCanvas extends StatelessWidget {
 
   final EditorController controller;
   final GlobalKey boundaryKey;
-  final ValueChanged<TextLayer> onEditLayer;
+  final ValueChanged<StoryLayer> onEditLayer;
 
   @override
   Widget build(BuildContext context) {
@@ -71,35 +69,72 @@ class _CanvasContent extends StatefulWidget {
   final EditorController controller;
   final GlobalKey boundaryKey;
   final double viewScale;
-  final ValueChanged<TextLayer> onEditLayer;
+  final ValueChanged<StoryLayer> onEditLayer;
 
   @override
   State<_CanvasContent> createState() => _CanvasContentState();
 }
 
 class _CanvasContentState extends State<_CanvasContent> {
-  // Gesture bookkeeping for the layer being transformed.
+  static const _snapDistance = 6.0;
+  static const _center = Offset(
+    AppConfig.canvasWidth / 2,
+    AppConfig.canvasHeight / 2,
+  );
+
+  // Gesture bookkeeping.
   Offset _lastFocal = Offset.zero;
   double _baseScale = 1;
   double _baseRotation = 0;
+  bool _recorded = false;
+  bool _dragging = false;
+  bool _snapX = false;
+  bool _snapY = false;
+  // Unsnapped position, so snapping never "sticks" the layer.
+  Offset _freePosition = Offset.zero;
 
   EditorController get _c => widget.controller;
 
-  void _start(TextLayer layer, ScaleStartDetails d) {
-    _lastFocal = d.focalPoint;
-    _baseScale = layer.scale;
-    _baseRotation = layer.rotation;
+  /// One undo step per gesture, taken lazily on the first real movement.
+  void _recordOnce() {
+    if (_recorded) return;
+    _c.checkpoint();
+    _recorded = true;
   }
 
-  void _update(TextLayer layer, ScaleUpdateDetails d, {bool move = true}) {
+  Offset _delta(ScaleUpdateDetails d) {
     // Global finger movement converted to canvas units.
     final delta = (d.focalPoint - _lastFocal) / widget.viewScale;
     _lastFocal = d.focalPoint;
-    _c.updateLayer(layer.id, (l) {
+    return delta;
+  }
+
+  // --- Layer gestures -------------------------------------------------------
+
+  void _layerStart(StoryLayer layer, ScaleStartDetails d) {
+    _c.select(layer.id);
+    _lastFocal = d.focalPoint;
+    _baseScale = layer.scale;
+    _baseRotation = layer.rotation;
+    _freePosition = layer.position;
+    _recorded = false;
+  }
+
+  void _layerUpdate(StoryLayer layer, ScaleUpdateDetails d, {bool move = true}) {
+    final delta = _delta(d);
+    _recordOnce();
+    if (move && !_dragging) setState(() => _dragging = true);
+    _c.updateLayer(layer.id, record: false, (l) {
       if (move) {
+        _freePosition = Offset(
+          (_freePosition.dx + delta.dx).clamp(0.0, AppConfig.canvasWidth),
+          (_freePosition.dy + delta.dy).clamp(0.0, AppConfig.canvasHeight),
+        );
+        _snapX = (_freePosition.dx - _center.dx).abs() < _snapDistance;
+        _snapY = (_freePosition.dy - _center.dy).abs() < _snapDistance;
         l.position = Offset(
-          (l.position.dx + delta.dx).clamp(0.0, AppConfig.canvasWidth),
-          (l.position.dy + delta.dy).clamp(0.0, AppConfig.canvasHeight),
+          _snapX ? _center.dx : _freePosition.dx,
+          _snapY ? _center.dy : _freePosition.dy,
         );
       }
       if (d.pointerCount > 1) {
@@ -109,158 +144,104 @@ class _CanvasContentState extends State<_CanvasContent> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Only this RepaintBoundary is exported; gesture detectors paint nothing.
-    return RepaintBoundary(
-      key: widget.boundaryKey,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Empty area: tap to deselect, pinch to resize/rotate the selected
-          // text (easier than pinching a small word).
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => _c.select(null),
-            onScaleStart: (d) {
-              final layer = _c.selected;
-              if (layer != null) _start(layer, d);
-            },
-            onScaleUpdate: (d) {
-              final layer = _c.selected;
-              if (layer != null) _update(layer, d, move: false);
-            },
-            child: _Background(background: _c.background),
-          ),
-          for (final layer in _c.layers)
-            _TextLayerView(
-              key: ValueKey(layer.id),
-              layer: layer,
-              selected: layer.id == _c.selectedId,
-              onTap: () {
-                if (layer.id == _c.selectedId) {
-                  widget.onEditLayer(layer);
-                } else {
-                  _c.select(layer.id);
-                }
-              },
-              onScaleStart: (d) {
-                _c.select(layer.id);
-                _start(layer, d);
-              },
-              onScaleUpdate: (d) => _update(layer, d),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Background extends StatelessWidget {
-  const _Background({required this.background});
-
-  final StoryBackground background;
-
-  @override
-  Widget build(BuildContext context) {
-    switch (background.kind) {
-      case BackgroundKind.solid:
-        return ColoredBox(color: background.color);
-      case BackgroundKind.gradient:
-        return DecoratedBox(
-          decoration: BoxDecoration(gradient: background.linearGradient),
-        );
-      case BackgroundKind.image:
-        final bytes = background.imageBytes!;
-        final image = MemoryImage(bytes);
-        if (background.imageFit == ImageFit.cover) {
-          return Image(image: image, fit: BoxFit.cover, gaplessPlayback: true);
-        }
-        // "Fit": whole photo visible over a blurred copy of itself.
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-              child: Image(
-                image: image,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              ),
-            ),
-            const ColoredBox(color: Color(0x33000000)),
-            Image(image: image, fit: BoxFit.contain, gaplessPlayback: true),
-          ],
-        );
+  void _gestureEnd(ScaleEndDetails _) {
+    if (_dragging || _snapX || _snapY) {
+      setState(() => _dragging = _snapX = _snapY = false);
     }
   }
-}
 
-class _TextLayerView extends StatelessWidget {
-  const _TextLayerView({
-    super.key,
-    required this.layer,
-    required this.selected,
-    required this.onTap,
-    required this.onScaleStart,
-    required this.onScaleUpdate,
-  });
+  // --- Empty-area gestures --------------------------------------------------
+  // With a layer selected: pinch resizes/rotates it (easier than pinching a
+  // small word). Otherwise, on a photo: drag/pinch moves and zooms the photo.
 
-  final TextLayer layer;
-  final bool selected;
-  final VoidCallback onTap;
-  final GestureScaleStartCallback onScaleStart;
-  final GestureScaleUpdateCallback onScaleUpdate;
+  Offset _baseOffset = Offset.zero;
+
+  void _bgStart(ScaleStartDetails d) {
+    _lastFocal = d.focalPoint;
+    _recorded = false;
+    final layer = _c.selected;
+    if (layer != null) {
+      _baseScale = layer.scale;
+      _baseRotation = layer.rotation;
+    } else {
+      _baseScale = _c.background.imageScale;
+      _baseOffset = _c.background.imageOffset;
+    }
+  }
+
+  void _bgUpdate(ScaleUpdateDetails d) {
+    final layer = _c.selected;
+    if (layer != null) {
+      _layerUpdate(layer, d, move: false);
+      return;
+    }
+    if (!_c.background.isImage) return;
+    final delta = _delta(d);
+    _recordOnce();
+    _baseOffset += delta;
+    _c.transformImage(_baseOffset, _baseScale * d.scale);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isRtl = StoryFonts.hasArabic(layer.text);
-    return Positioned(
-      left: layer.position.dx,
-      top: layer.position.dy,
-      child: FractionalTranslation(
-        // position is the center of the text block
-        translation: const Offset(-0.5, -0.5),
-        child: Transform.rotate(
-          angle: layer.rotation,
-          child: Transform.scale(
-            scale: layer.scale,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onTap,
-              onScaleStart: onScaleStart,
-              onScaleUpdate: onScaleUpdate,
-              child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxWidth: AppConfig.canvasWidth - 24),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: layer.highlightColor,
-                    borderRadius: BorderRadius.circular(10),
-                    border: selected
-                        ? Border.all(color: Colors.white, width: 1.2)
-                        : null,
-                    boxShadow: selected
-                        ? const [
-                            BoxShadow(color: Color(0x55000000), blurRadius: 4)
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    layer.text,
-                    textAlign: layer.align,
-                    textDirection:
-                        isRtl ? TextDirection.rtl : TextDirection.ltr,
-                    style: layer.style,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Only this RepaintBoundary is exported; gesture detectors paint
+        // nothing, and the guides below sit outside it.
+        RepaintBoundary(
+          key: widget.boundaryKey,
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            fit: StackFit.expand,
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _c.select(null),
+                onDoubleTap: () {
+                  // Double-tap the photo to reset pan/zoom.
+                  if (_c.selected == null && _c.background.isImage) {
+                    _c.checkpoint();
+                    _c.transformImage(Offset.zero, 1);
+                  }
+                },
+                onScaleStart: _bgStart,
+                onScaleUpdate: _bgUpdate,
+                onScaleEnd: _gestureEnd,
+                child: StoryBackgroundView(background: _c.background),
+              ),
+              for (final layer in _c.layers)
+                PositionedLayer(
+                  key: ValueKey(layer.id),
+                  layer: layer,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if (layer.id == _c.selectedId) {
+                        widget.onEditLayer(layer);
+                      } else {
+                        _c.select(layer.id);
+                      }
+                    },
+                    onScaleStart: (d) => _layerStart(layer, d),
+                    onScaleUpdate: (d) => _layerUpdate(layer, d),
+                    onScaleEnd: _gestureEnd,
+                    child: StoryLayerVisual(
+                      layer: layer,
+                      selected: layer.id == _c.selectedId,
+                    ),
                   ),
                 ),
-              ),
-            ),
+            ],
           ),
         ),
-      ),
+        if (_dragging)
+          IgnorePointer(
+            child: CustomPaint(
+              painter: SafeZonePainter(snapX: _snapX, snapY: _snapY),
+            ),
+          ),
+      ],
     );
   }
 }

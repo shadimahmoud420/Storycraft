@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../core/strings.dart';
 import '../data/fonts.dart';
-import '../models/text_layer.dart';
+import '../models/story_layer.dart';
 import 'color_picker.dart';
 
 /// Opens the text editor. Edits a copy of [draft]; returns it on "Done"
 /// (or null if dismissed / left empty).
-Future<TextLayer?> showTextEditorSheet(BuildContext context, TextLayer draft) {
-  return showModalBottomSheet<TextLayer>(
+Future<StoryLayer?> showTextEditorSheet(BuildContext context, StoryLayer draft) {
+  return showModalBottomSheet<StoryLayer>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -19,7 +19,7 @@ Future<TextLayer?> showTextEditorSheet(BuildContext context, TextLayer draft) {
 class _TextEditorSheet extends StatefulWidget {
   const _TextEditorSheet({required this.draft});
 
-  final TextLayer draft;
+  final StoryLayer draft;
 
   @override
   State<_TextEditorSheet> createState() => _TextEditorSheetState();
@@ -31,7 +31,7 @@ class _TextEditorSheetState extends State<_TextEditorSheet> {
   late bool _arabicTab = widget.draft.font.arabic;
   late bool _fontTouched = widget.draft.text.isNotEmpty;
 
-  TextLayer get d => widget.draft;
+  StoryLayer get d => widget.draft;
 
   @override
   void dispose() {
@@ -208,6 +208,7 @@ class _TextEditorSheetState extends State<_TextEditorSheet> {
                       TextHighlight.none => Icons.format_color_text_rounded,
                       TextHighlight.solid => Icons.rectangle_rounded,
                       TextHighlight.soft => Icons.rectangle_outlined,
+                      TextHighlight.blur => Icons.blur_circular_rounded,
                     }),
                   ),
                   IconButton.filledTonal(
