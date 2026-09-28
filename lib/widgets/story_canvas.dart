@@ -91,6 +91,12 @@ class _CanvasContentState extends State<_CanvasContent> {
   bool _snapY = false;
   // Unsnapped position, so snapping never "sticks" the layer.
   Offset _freePosition = Offset.zero;
+  // Live rotation/scale readout while pinching ("45° · 120%").
+  String? _hud;
+  bool _rotationSnapped = false;
+
+  /// Snap to multiples of 45° within ±4° so straight text is easy.
+  static const _rotationSnapDeg = 4.0;
 
   EditorController get _c => widget.controller;
   Offset get _center => _c.canvasSize.center(Offset.zero);
@@ -139,14 +145,30 @@ class _CanvasContentState extends State<_CanvasContent> {
       }
       if (d.pointerCount > 1) {
         l.scale = (_baseScale * d.scale).clamp(0.3, 6.0);
-        l.rotation = _baseRotation + d.rotation;
+        var deg = normalizeDegrees((_baseRotation + d.rotation) * 180 / math.pi);
+        final nearest = (deg / 45).round() * 45.0;
+        _rotationSnapped = (deg - nearest).abs() <= _rotationSnapDeg;
+        if (_rotationSnapped) deg = normalizeDegrees(nearest);
+        l.rotation = deg * math.pi / 180;
+        _hud = '${deg.round()}°  ·  ${(l.scale * 100).round()}%';
       }
     });
   }
 
+  /// Degrees in (-180, 180].
+  static double normalizeDegrees(double deg) {
+    var d = deg % 360;
+    if (d > 180) d -= 360;
+    if (d <= -180) d += 360;
+    return d;
+  }
+
   void _gestureEnd(ScaleEndDetails _) {
-    if (_dragging || _snapX || _snapY) {
-      setState(() => _dragging = _snapX = _snapY = false);
+    if (_dragging || _snapX || _snapY || _hud != null) {
+      setState(() {
+        _dragging = _snapX = _snapY = _rotationSnapped = false;
+        _hud = null;
+      });
     }
   }
 
@@ -235,6 +257,47 @@ class _CanvasContentState extends State<_CanvasContent> {
             ],
           ),
         ),
+        if (_hud != null)
+          Positioned(
+            top: 12,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _rotationSnapped
+                        ? const Color(0xE6FFB300)
+                        : const Color(0xCC000000),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.rotate_right_rounded,
+                        size: 16,
+                        color: _rotationSnapped ? Colors.black : Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _hud!,
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              _rotationSnapped ? Colors.black : Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         if (_dragging)
           IgnorePointer(
             child: CustomPaint(

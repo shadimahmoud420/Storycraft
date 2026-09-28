@@ -8,7 +8,11 @@ import '../data/fonts.dart';
 enum LayerKind { text, emoji, shape, image, art, signature }
 
 /// Decorations around a signature name.
-enum SignatureStyle { swash, plain, underline, seal, monogram, framed }
+enum SignatureStyle {
+  swash, plain, underline, seal, monogram, framed,
+  // Ornamental styles.
+  ornate, laurel, royal, arabesque, divider, sparkle,
+}
 
 enum ShapeKind { roundedFrame, rectFrame, circleFrame, line, label }
 

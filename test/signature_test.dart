@@ -61,6 +61,6 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.byType(SignatureView), findsNWidgets(24));
+    expect(find.byType(SignatureView), findsNWidgets(SignatureStyle.values.length * 4));
   });
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -195,6 +196,135 @@ class _EditorScreenState extends State<EditorScreen> {
       case LayerKind.art:
         break;
     }
+  }
+
+  /// Degrees folded into (-180, 180], so +15° past 180° wraps around.
+  static double _wrapDegrees(double d) {
+    final x = d % 360;
+    return x > 180 ? x - 360 : x;
+  }
+
+  /// Exact rotation (degrees) and size (%) for any layer: a slider with
+  /// fine steps and quick presets. The whole session is one undo step.
+  Future<void> _editTransform(StoryLayer layer) async {
+    final s = S.of(context);
+    _controller.checkpoint();
+    double deg() => _wrapDegrees(layer.rotation * 180 / math.pi);
+
+    void setDeg(double d) => _controller.updateLayer(
+          layer.id,
+          (l) => l.rotation = _wrapDegrees(d) * math.pi / 180,
+          record: false,
+        );
+    void setScale(double v) => _controller.updateLayer(
+          layer.id,
+          (l) => l.scale = v.clamp(0.3, 6.0),
+          record: false,
+        );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (context) => ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) {
+          final theme = Theme.of(context);
+          final d = deg();
+          Widget step(String label, double delta) => Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () => setDeg(delta == 0 ? 0 : d + delta),
+                  child: FittedBox(
+                    child: Text(label, textDirection: TextDirection.ltr),
+                  ),
+                ),
+              );
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Text(s.rotation, style: theme.textTheme.titleMedium),
+                      const Spacer(),
+                      Text(
+                        '${d.round()}°',
+                        textDirection: TextDirection.ltr,
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                  Directionality(
+                    // Degrees read left-to-right like a protractor.
+                    textDirection: TextDirection.ltr,
+                    child: Slider(
+                      value: d.clamp(-180.0, 180.0),
+                      min: -180,
+                      max: 180,
+                      divisions: 360,
+                      label: '${d.round()}°',
+                      onChanged: setDeg,
+                    ),
+                  ),
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      spacing: 4,
+                      children: [
+                        step('−90°', -90),
+                        step('−15°', -15),
+                        step('−1°', -1),
+                        step('0°', 0),
+                        step('+1°', 1),
+                        step('+15°', 15),
+                        step('+90°', 90),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(s.scaleLabel, style: theme.textTheme.titleMedium),
+                      const Spacer(),
+                      Text(
+                        '${(layer.scale * 100).round()}%',
+                        textDirection: TextDirection.ltr,
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Slider(
+                      value: layer.scale.clamp(0.3, 6.0),
+                      min: 0.3,
+                      max: 6,
+                      label: '${(layer.scale * 100).round()}%',
+                      onChanged: setScale,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      setDeg(0);
+                      setScale(1);
+                    },
+                    icon: const Icon(Icons.restart_alt_rounded),
+                    label: Text(s.reset),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   /// Color for shapes and symbols, applied live (one undo step).
@@ -593,6 +723,7 @@ class _EditorScreenState extends State<EditorScreen> {
                             c.selected!.kind != LayerKind.art,
                         editLabel: c.selected!.isText ? s.text : s.style,
                         onEdit: () => _editLayer(c.selected!),
+                        onTransform: () => _editTransform(c.selected!),
                         onDuplicate: () => c.duplicateLayer(c.selectedId!),
                         onDelete: () => c.removeLayer(c.selectedId!),
                       ),
@@ -863,6 +994,7 @@ class _SelectionBar extends StatelessWidget {
     required this.canEdit,
     required this.editLabel,
     required this.onEdit,
+    required this.onTransform,
     required this.onDuplicate,
     required this.onDelete,
   });
@@ -870,6 +1002,7 @@ class _SelectionBar extends StatelessWidget {
   final bool canEdit;
   final String editLabel;
   final VoidCallback onEdit;
+  final VoidCallback onTransform;
   final VoidCallback onDuplicate;
   final VoidCallback onDelete;
 
@@ -878,16 +1011,25 @@ class _SelectionBar extends StatelessWidget {
     final s = S.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Wrap(
-        spacing: 8,
-        alignment: WrapAlignment.center,
-        children: [
+      // One scrollable row, so the canvas never loses height to a 2nd line.
+      child: Center(
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            spacing: 8,
+            children: [
           if (canEdit)
             ActionChip(
               avatar: const Icon(Icons.edit_rounded, size: 18),
               label: Text(editLabel),
               onPressed: onEdit,
             ),
+          ActionChip(
+            avatar: const Icon(Icons.rotate_right_rounded, size: 18),
+            label: Text(s.rotateResize),
+            onPressed: onTransform,
+          ),
           ActionChip(
             avatar: const Icon(Icons.copy_rounded, size: 18),
             label: Text(s.duplicate),
@@ -898,7 +1040,9 @@ class _SelectionBar extends StatelessWidget {
             label: Text(s.delete),
             onPressed: onDelete,
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

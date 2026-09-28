@@ -168,6 +168,17 @@ class S {
   String get sigMonogram => _t('sigMonogram');
   String get sigFramed => _t('sigFramed');
 
+  String get sigOrnate => _t('sigOrnate');
+  String get sigLaurel => _t('sigLaurel');
+  String get sigRoyal => _t('sigRoyal');
+  String get sigArabesque => _t('sigArabesque');
+  String get sigDivider => _t('sigDivider');
+  String get sigSparkle => _t('sigSparkle');
+  String get rotation => _t('rotation');
+  String get scaleLabel => _t('scaleLabel');
+  String get rotateResize => _t('rotateResize');
+  String get reset => _t('reset');
+
   static const _values = <String, Map<String, String>>{
     'ar': {
       'appName': 'StoryCraft',
@@ -217,6 +228,16 @@ class S {
       'tapToAddText': 'اضغط «نص» لإضافة كتابة',
       'saveFailed': 'تعذّر الحفظ، تحقق من صلاحية الصور',
       'angle': 'الاتجاه',
+      'sigOrnate': 'مزخرف',
+      'sigLaurel': 'إكليل غار',
+      'sigRoyal': 'ملكي',
+      'sigArabesque': 'إطار عربي',
+      'sigDivider': 'فاصل مزخرف',
+      'sigSparkle': 'لمعات',
+      'rotation': 'الدوران',
+      'scaleLabel': 'الحجم',
+      'rotateResize': 'الدوران والحجم',
+      'reset': 'إعادة الضبط',
       'signature': 'توقيعي',
       'signatureHint': 'صمّم توقيعك مرة واحدة وضعه على أي صورة',
       'yourName': 'اكتب اسمك',
@@ -368,6 +389,16 @@ class S {
       'tapToAddText': 'Tap “Text” to start writing',
       'saveFailed': 'Could not save. Check Photos permission',
       'angle': 'Direction',
+      'sigOrnate': 'Ornate',
+      'sigLaurel': 'Laurel',
+      'sigRoyal': 'Royal',
+      'sigArabesque': 'Arabesque',
+      'sigDivider': 'Divider',
+      'sigSparkle': 'Sparkle',
+      'rotation': 'Rotation',
+      'scaleLabel': 'Scale',
+      'rotateResize': 'Rotate & size',
+      'reset': 'Reset',
       'signature': 'Signature',
       'signatureHint': 'Design your signature once, add it to any photo',
       'yourName': 'Type your name',

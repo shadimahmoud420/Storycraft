@@ -47,7 +47,13 @@ class _SignatureScreenState extends State<SignatureScreen> {
   List<StoryLayer> _options(S s) {
     final text = _text.isEmpty ? (s.isArabic ? 'اسمك' : 'Your Name') : _text;
     final fonts = StoryFonts.hasArabic(text) ? _arabicFonts : _englishFonts;
-    const styles = SignatureStyle.values;
+    // Ornamental designs first; each font gets its own decoration.
+    const styles = [
+      SignatureStyle.ornate, SignatureStyle.laurel, SignatureStyle.royal,
+      SignatureStyle.arabesque, SignatureStyle.swash, SignatureStyle.divider,
+      SignatureStyle.sparkle, SignatureStyle.seal, SignatureStyle.monogram,
+      SignatureStyle.framed, SignatureStyle.underline, SignatureStyle.plain,
+    ];
     return [
       for (var i = 0; i < fonts.length; i++)
         StoryLayer(
@@ -108,6 +114,12 @@ class _SignatureScreenState extends State<SignatureScreen> {
         SignatureStyle.seal => s.sigSeal,
         SignatureStyle.monogram => s.sigMonogram,
         SignatureStyle.framed => s.sigFramed,
+        SignatureStyle.ornate => s.sigOrnate,
+        SignatureStyle.laurel => s.sigLaurel,
+        SignatureStyle.royal => s.sigRoyal,
+        SignatureStyle.arabesque => s.sigArabesque,
+        SignatureStyle.divider => s.sigDivider,
+        SignatureStyle.sparkle => s.sigSparkle,
       };
 
   String _fillLabel(S s, TextFill f) => switch (f) {
@@ -118,25 +130,66 @@ class _SignatureScreenState extends State<SignatureScreen> {
         TextFill.rose => s.fillRose,
       };
 
-  Widget _card(StoryLayer sig, {bool selected = false, VoidCallback? onTap,
-      VoidCallback? onLongPress, double height = 110}) {
-    final scheme = Theme.of(context).colorScheme;
+  Widget _card(StoryLayer sig, {bool selected = false, bool dimmed = false,
+      VoidCallback? onTap, VoidCallback? onLongPress, double height = 110}) {
+    const accent = Color(0xFF7B4DFF);
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        height: height,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: _darkPreview ? const Color(0xFF1C1C22) : const Color(0xFFF3F0EA),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? scheme.primary : Colors.transparent,
-            width: 3,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 180),
+        scale: selected ? 1.0 : (dimmed ? 0.94 : 1.0),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          opacity: dimmed ? 0.55 : 1,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                height: height,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _darkPreview
+                      ? const Color(0xFF1C1C22)
+                      : const Color(0xFFF3F0EA),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: selected ? accent : Colors.transparent,
+                    width: 4,
+                  ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.55),
+                            blurRadius: 16,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(child: FittedBox(child: SignatureView(layer: sig))),
+              ),
+              // Check badge on the chosen design.
+              if (selected)
+                PositionedDirectional(
+                  top: -8,
+                  start: -8,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.check_rounded,
+                        size: 18, color: Colors.white),
+                  ),
+                ),
+            ],
           ),
         ),
-        child: FittedBox(child: SignatureView(layer: sig)),
       ),
     );
   }
@@ -248,16 +301,18 @@ class _SignatureScreenState extends State<SignatureScreen> {
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(6),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: 220,
-                  mainAxisExtent: 110,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
+                  mainAxisExtent: 120,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
                 ),
                 itemCount: options.length,
                 itemBuilder: (context, i) => _card(
                   options[i],
                   selected: _selected == i,
+                  dimmed: _selected != null && _selected != i,
                   onTap: () => setState(() {
                     _selected = i;
                     _styleOverride = null;
