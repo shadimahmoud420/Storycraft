@@ -241,6 +241,25 @@ class EditorController extends ChangeNotifier {
     );
   }
 
+  /// Places a saved signature in the bottom corner (inside the story safe
+  /// zone), on the reading side's end.
+  StoryLayer addSignature(StoryLayer signature) => addLayer(
+        signature.copyWith(
+          id: _newId(),
+          position: signatureSpot(signature.text, _format),
+        ),
+        keepPosition: true,
+      );
+
+  /// Bottom corner on the name's reading-end side, inside Instagram's
+  /// safe zone for stories.
+  static Offset signatureSpot(String name, StoryFormat format) {
+    final h = format.size.height;
+    final rtl = StoryFonts.hasArabic(name);
+    final y = format == StoryFormat.story ? h * 0.74 : h * 0.86;
+    return Offset(rtl ? 110 : 250, y);
+  }
+
   /// Adds a ready-made layer with a fresh id, placed in a free spot.
   StoryLayer addLayer(StoryLayer layer, {bool keepPosition = false}) {
     checkpoint();

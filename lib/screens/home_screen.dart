@@ -6,12 +6,14 @@ import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/palettes.dart';
 import '../data/formats.dart';
+import '../state/editor_controller.dart';
 import '../data/templates.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
 import '../services/draft_store.dart';
 import '../services/image_processing.dart';
 import 'brand_kit_screen.dart';
+import 'signature_screen.dart';
 import 'editor_screen.dart';
 import 'templates_screen.dart';
 
@@ -27,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _loading = false;
 
-  Future<void> _startFromPhoto() async {
+  Future<void> _startFromPhoto({List<StoryLayer> layers = const []}) async {
     final s = S.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final picked = await ImagePicker().pickImage(
@@ -43,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await picked.readAsBytes(),
       );
       if (!mounted) return;
-      _openEditor(StoryBackground.image(bytes));
+      _openEditor(StoryBackground.image(bytes), layers: layers);
     } catch (_) {
       messenger.showSnackBar(SnackBar(content: Text(s.processFailed)));
     } finally {
@@ -77,6 +79,73 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (template == null || !mounted) return;
     _openEditor(template.background, layers: template.buildLayers());
+  }
+
+  /// Signature flow: pick or create a signature, then choose where to
+  /// place it (photo, gradient or classic color).
+  Future<void> _openSignature() async {
+    final s = S.of(context);
+    final sig = await Navigator.of(context).push<StoryLayer>(
+      MaterialPageRoute(builder: (_) => const SignatureScreen()),
+    );
+    if (sig == null || !mounted) return;
+    final choice = await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(s.placeOn,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: Text(s.onPhoto),
+              onTap: () => Navigator.pop(context, 0),
+            ),
+            ListTile(
+              leading: const Icon(Icons.gradient_rounded),
+              title: Text(s.onGradient),
+              onTap: () => Navigator.pop(context, 1),
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_color_fill_rounded),
+              title: Text(s.onClassic),
+              onTap: () => Navigator.pop(context, 2),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    // Light ink (white/gold) goes on dark backgrounds and vice versa.
+    final lightInk = sig.fill != TextFill.solid ||
+        sig.color.computeLuminance() > 0.5;
+    final placed = sig.copyWith(
+      id: sig.id,
+      position: EditorController.signatureSpot(sig.text, StoryFormat.story),
+    );
+    switch (choice) {
+      case 0:
+        await _startFromPhoto(layers: [placed]);
+      case 1:
+        _openEditor(
+          StoryBackground.gradient(
+              lightInk ? Palettes.gradients[6] : Palettes.gradients[3]),
+          layers: [placed],
+          openBackgroundSheet: true,
+        );
+      default:
+        _openEditor(
+          StoryBackground.solid(
+              lightInk ? const Color(0xFF1C1C1E) : const Color(0xFFF5F0E6)),
+          layers: [placed],
+          openBackgroundSheet: true,
+        );
+    }
   }
 
   Future<void> _openDraft(String id) async {
@@ -158,13 +227,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 14),
                     _StartCard(
+                      icon: Icons.draw_rounded,
+                      title: s.signature,
+                      subtitle: s.signatureHint,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF232526), Color(0xFF5B4A2E)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      onTap: _openSignature,
+                    ),
+                    const SizedBox(height: 14),
+                    _StartCard(
                       icon: Icons.photo_library_rounded,
                       title: s.fromPhoto,
                       subtitle: s.fromPhotoHint,
                       decoration: const BoxDecoration(
                         gradient: AppTheme.brandGradient,
                       ),
-                      onTap: _loading ? null : _startFromPhoto,
+                      onTap: _loading ? null : () => _startFromPhoto(),
                     ),
                     const SizedBox(height: 14),
                     _StartCard(

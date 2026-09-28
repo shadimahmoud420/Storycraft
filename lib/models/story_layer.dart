@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 
 import '../data/fonts.dart';
 
-enum LayerKind { text, emoji, shape, image, art }
+enum LayerKind { text, emoji, shape, image, art, signature }
+
+/// Decorations around a signature name.
+enum SignatureStyle { swash, plain, underline, seal, monogram, framed }
 
 enum ShapeKind { roundedFrame, rectFrame, circleFrame, line, label }
 
@@ -39,6 +42,7 @@ class StoryLayer {
     this.letterSpacing = 0,
     this.lineHeight = 1.3,
     this.curve = 0,
+    this.signatureStyle = SignatureStyle.swash,
     this.shape = ShapeKind.roundedFrame,
     this.size = 160,
     this.imageBytes,
@@ -70,6 +74,9 @@ class StoryLayer {
   /// Bends the text along an arc: -1 (smile) … 0 (straight) … 1 (rainbow).
   double curve;
 
+  /// Decoration for [LayerKind.signature] ([text] holds the name).
+  SignatureStyle signatureStyle;
+
   /// Shape and image layers: base width in canvas units.
   ShapeKind shape;
   double size;
@@ -98,6 +105,7 @@ class StoryLayer {
         letterSpacing: letterSpacing,
         lineHeight: lineHeight,
         curve: curve,
+        signatureStyle: signatureStyle,
         shape: shape,
         size: size,
         imageBytes: imageBytes,
@@ -195,6 +203,7 @@ class StoryLayer {
         'letterSpacing': letterSpacing,
         'lineHeight': lineHeight,
         'curve': curve,
+        'signature': signatureStyle.name,
         'shape': shape.name,
         'size': size,
         if (imageBytes != null) 'image': base64Encode(imageBytes!),
@@ -221,6 +230,8 @@ class StoryLayer {
         letterSpacing: (j['letterSpacing'] as num? ?? 0).toDouble(),
         lineHeight: (j['lineHeight'] as num? ?? 1.3).toDouble(),
         curve: (j['curve'] as num? ?? 0).toDouble(),
+        signatureStyle: _enum(
+            SignatureStyle.values, j['signature'], SignatureStyle.swash),
         shape: _enum(ShapeKind.values, j['shape'], ShapeKind.roundedFrame),
         size: (j['size'] as num? ?? 160).toDouble(),
         imageBytes:

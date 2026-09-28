@@ -146,6 +146,28 @@ class S {
   String get fmtSquareHint => _t('fmtSquareHint');
   String get fmtWideHint => _t('fmtWideHint');
 
+  String get signature => _t('signature');
+  String get signatureHint => _t('signatureHint');
+  String get yourName => _t('yourName');
+  String get chooseStyle => _t('chooseStyle');
+  String get saveSignature => _t('saveSignature');
+  String get savedSignatures => _t('savedSignatures');
+  String get newSignature => _t('newSignature');
+  String get placeOn => _t('placeOn');
+  String get onPhoto => _t('onPhoto');
+  String get onGradient => _t('onGradient');
+  String get onClassic => _t('onClassic');
+  String get signatureSaved => _t('signatureSaved');
+  String get deleteSignature => _t('deleteSignature');
+  String get noSignatures => _t('noSignatures');
+  String get useSignature => _t('useSignature');
+  String get sigSwash => _t('sigSwash');
+  String get sigPlain => _t('sigPlain');
+  String get sigUnderline => _t('sigUnderline');
+  String get sigSeal => _t('sigSeal');
+  String get sigMonogram => _t('sigMonogram');
+  String get sigFramed => _t('sigFramed');
+
   static const _values = <String, Map<String, String>>{
     'ar': {
       'appName': 'StoryCraft',
@@ -195,6 +217,27 @@ class S {
       'tapToAddText': 'اضغط «نص» لإضافة كتابة',
       'saveFailed': 'تعذّر الحفظ، تحقق من صلاحية الصور',
       'angle': 'الاتجاه',
+      'signature': 'توقيعي',
+      'signatureHint': 'صمّم توقيعك مرة واحدة وضعه على أي صورة',
+      'yourName': 'اكتب اسمك',
+      'chooseStyle': 'اختر شكل التوقيع',
+      'saveSignature': 'حفظ التوقيع',
+      'savedSignatures': 'تواقيعي المحفوظة',
+      'newSignature': 'توقيع جديد',
+      'placeOn': 'أين تريد وضع توقيعك؟',
+      'onPhoto': 'على صورة',
+      'onGradient': 'على تدرّج لوني',
+      'onClassic': 'على لون كلاسيكي',
+      'signatureSaved': 'تم حفظ التوقيع',
+      'deleteSignature': 'حذف التوقيع؟',
+      'noSignatures': 'لا توجد تواقيع محفوظة بعد',
+      'useSignature': 'استخدم هذا التوقيع',
+      'sigSwash': 'انسيابي',
+      'sigPlain': 'بسيط',
+      'sigUnderline': 'خط سفلي',
+      'sigSeal': 'ختم',
+      'sigMonogram': 'الحرف الأول',
+      'sigFramed': 'بين خطين',
       'filters': 'فلاتر',
       'intensity': 'الشدة',
       'fNone': 'بدون',
@@ -325,6 +368,27 @@ class S {
       'tapToAddText': 'Tap “Text” to start writing',
       'saveFailed': 'Could not save. Check Photos permission',
       'angle': 'Direction',
+      'signature': 'Signature',
+      'signatureHint': 'Design your signature once, add it to any photo',
+      'yourName': 'Type your name',
+      'chooseStyle': 'Pick a signature style',
+      'saveSignature': 'Save signature',
+      'savedSignatures': 'My signatures',
+      'newSignature': 'New signature',
+      'placeOn': 'Where do you want your signature?',
+      'onPhoto': 'On a photo',
+      'onGradient': 'On a gradient',
+      'onClassic': 'On a classic color',
+      'signatureSaved': 'Signature saved',
+      'deleteSignature': 'Delete this signature?',
+      'noSignatures': 'No saved signatures yet',
+      'useSignature': 'Use this signature',
+      'sigSwash': 'Swash',
+      'sigPlain': 'Plain',
+      'sigUnderline': 'Underline',
+      'sigSeal': 'Seal',
+      'sigMonogram': 'Monogram',
+      'sigFramed': 'Framed',
       'filters': 'Filters',
       'intensity': 'Intensity',
       'fNone': 'None',

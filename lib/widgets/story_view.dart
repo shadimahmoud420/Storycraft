@@ -10,6 +10,7 @@ import '../data/formats.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import 'signature_view.dart';
 import 'styled_text.dart';
 
 /// Paints a story background (solid, gradient or pan/zoomed photo + dim).
@@ -146,6 +147,15 @@ class StoryLayerVisual extends StatelessWidget {
             size: size,
             painter: ShapePainter(layer.shape, layer.color),
           ),
+        );
+      case LayerKind.signature:
+        return Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            border: border,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SignatureView(layer: layer),
         );
       case LayerKind.art:
         return Container(

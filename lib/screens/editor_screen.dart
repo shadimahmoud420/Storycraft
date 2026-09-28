@@ -15,16 +15,19 @@ import '../models/story_layer.dart';
 import '../services/brand_kit.dart';
 import '../services/draft_store.dart';
 import '../services/image_processing.dart';
+import '../services/signature_store.dart';
 import '../services/story_exporter.dart';
 import '../state/editor_controller.dart';
 import '../widgets/background_sheet.dart';
 import '../widgets/color_picker.dart';
+import '../widgets/signature_view.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/quotes_sheet.dart';
 import '../widgets/sticker_sheet.dart';
 import '../widgets/story_canvas.dart';
 import '../widgets/text_editor_sheet.dart';
 import 'brand_kit_screen.dart';
+import 'signature_screen.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({
@@ -186,6 +189,7 @@ class _EditorScreenState extends State<EditorScreen> {
         });
       case LayerKind.shape:
       case LayerKind.emoji:
+      case LayerKind.signature:
         await _editColor(layer);
       case LayerKind.image:
       case LayerKind.art:
@@ -212,8 +216,10 @@ class _EditorScreenState extends State<EditorScreen> {
                 ColorRow(
                   selected: layer.color,
                   onChanged: (c) {
-                    _controller.updateLayer(
-                        layer.id, (l) => l.color = c, record: false);
+                    _controller.updateLayer(layer.id, (l) {
+                      l.color = c;
+                      l.fill = TextFill.solid;
+                    }, record: false);
                     setSheet(() {});
                   },
                 ),
@@ -271,6 +277,68 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
     );
     if (picked != null) _controller.setFormat(picked);
+  }
+
+  /// Saved signatures (tap to add) + create a new one.
+  Future<void> _openSignatures() async {
+    final s = S.of(context);
+    final saved = SignatureStore.instance.value;
+    Future<void> create() async {
+      final sig = await Navigator.of(context).push<StoryLayer>(
+        MaterialPageRoute(builder: (_) => const SignatureScreen()),
+      );
+      if (sig != null) _controller.addSignature(sig);
+    }
+
+    if (saved.isEmpty) return create();
+    final picked = await showModalBottomSheet<Object>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(s.savedSignatures,
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 90,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: saved.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 10),
+                  itemBuilder: (context, i) => GestureDetector(
+                    onTap: () => Navigator.pop(context, saved[i]),
+                    child: Container(
+                      width: 160,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1C1C22),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: FittedBox(child: SignatureView(layer: saved[i])),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pop(context, 'new'),
+                icon: const Icon(Icons.add_rounded),
+                label: Text(s.newSignature),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked is StoryLayer) {
+      _controller.addSignature(picked);
+    } else if (picked == 'new' && mounted) {
+      await create();
+    }
   }
 
   Future<void> _openBackground() => showBackgroundSheet(
@@ -549,6 +617,11 @@ class _EditorScreenState extends State<EditorScreen> {
                           icon: Icons.palette_rounded,
                           label: s.background,
                           onTap: _openBackground,
+                        ),
+                        _Tool(
+                          icon: Icons.draw_rounded,
+                          label: s.signature,
+                          onTap: _openSignatures,
                         ),
                         _Tool(
                           icon: Icons.storefront_rounded,
