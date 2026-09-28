@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/fonts.dart';
+import '../data/formats.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
 import '../services/brand_kit.dart';
@@ -18,6 +19,7 @@ import '../services/story_exporter.dart';
 import '../state/editor_controller.dart';
 import '../widgets/background_sheet.dart';
 import '../widgets/color_picker.dart';
+import '../widgets/filter_sheet.dart';
 import '../widgets/quotes_sheet.dart';
 import '../widgets/sticker_sheet.dart';
 import '../widgets/story_canvas.dart';
@@ -29,12 +31,14 @@ class EditorScreen extends StatefulWidget {
     super.key,
     required this.initialBackground,
     this.initialLayers = const [],
+    this.initialFormat = StoryFormat.story,
     this.draftId,
     this.openBackgroundSheet = false,
   });
 
   final StoryBackground initialBackground;
   final List<StoryLayer> initialLayers;
+  final StoryFormat initialFormat;
 
   /// Set when reopening a saved draft; a new id is created otherwise.
   final String? draftId;
@@ -48,6 +52,7 @@ class _EditorScreenState extends State<EditorScreen> {
   late final EditorController _controller = EditorController(
     widget.initialBackground,
     layers: widget.initialLayers,
+    format: widget.initialFormat,
   );
   final _boundaryKey = GlobalKey();
   late final _exporter = StoryExporter(_boundaryKey);
@@ -106,6 +111,7 @@ class _EditorScreenState extends State<EditorScreen> {
         _draftId,
         _controller.background,
         _controller.layers,
+        format: _controller.format,
         thumbnail: thumb,
       );
     } catch (_) {}
@@ -169,7 +175,14 @@ class _EditorScreenState extends State<EditorScreen> {
             ..fontSize = result.fontSize
             ..align = result.align
             ..highlight = result.highlight
-            ..shadow = result.shadow;
+            ..shadow = result.shadow
+            ..fill = result.fill
+            ..color2 = result.color2
+            ..strokeWidth = result.strokeWidth
+            ..strokeColor = result.strokeColor
+            ..letterSpacing = result.letterSpacing
+            ..lineHeight = result.lineHeight
+            ..curve = result.curve;
         });
       case LayerKind.shape:
       case LayerKind.emoji:
@@ -210,6 +223,54 @@ class _EditorScreenState extends State<EditorScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openFormat() async {
+    final s = S.of(context);
+    final items = [
+      (StoryFormat.story, s.fmtStory, s.fmtStoryHint),
+      (StoryFormat.portrait, s.fmtPortrait, s.fmtPortraitHint),
+      (StoryFormat.square, s.fmtSquare, s.fmtSquareHint),
+      (StoryFormat.wide, s.fmtWide, s.fmtWideHint),
+    ];
+    final picked = await showModalBottomSheet<StoryFormat>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (format, title, hint) in items)
+              ListTile(
+                leading: SizedBox(
+                  width: 36,
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: format.aspectRatio,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                title: Text(title),
+                subtitle: Text(hint),
+                trailing: format == _controller.format
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.pop(context, format),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) _controller.setFormat(picked);
   }
 
   Future<void> _openBackground() => showBackgroundSheet(
@@ -494,6 +555,11 @@ class _EditorScreenState extends State<EditorScreen> {
                           label: s.brandKit,
                           onTap: _openBrandKit,
                         ),
+                        _Tool(
+                          icon: Icons.aspect_ratio_rounded,
+                          label: s.format,
+                          onTap: _openFormat,
+                        ),
                         if (bg.isImage) ...[
                           _Tool(
                             icon: Icons.wb_sunny_rounded,
@@ -511,6 +577,13 @@ class _EditorScreenState extends State<EditorScreen> {
                             onTap: c.isBusy
                                 ? null
                                 : () => _runImageOp(ImageOperation.enhance),
+                          ),
+                          _Tool(
+                            icon: Icons.filter_vintage_rounded,
+                            label: s.filters,
+                            onTap: c.isBusy
+                                ? null
+                                : () => showFilterSheet(context, c),
                           ),
                           _Tool(
                             icon: Icons.contrast_rounded,

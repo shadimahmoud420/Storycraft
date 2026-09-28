@@ -13,6 +13,10 @@ enum ShapeKind { roundedFrame, rectFrame, circleFrame, line, label }
 /// text, which keeps it readable on busy photos.
 enum TextHighlight { none, solid, soft, blur }
 
+/// How the letters are painted: a flat color, a two-color gradient or a
+/// metallic texture.
+enum TextFill { solid, gradient, gold, silver, rose }
+
 /// One movable, scalable, rotatable element on the story canvas: text,
 /// emoji/symbol sticker, decorative shape, image (brand logo) or cartoon
 /// illustration ([text] holds the art name for [LayerKind.art]).
@@ -28,6 +32,13 @@ class StoryLayer {
     this.align = TextAlign.center,
     this.highlight = TextHighlight.none,
     this.shadow = false,
+    this.fill = TextFill.solid,
+    this.color2 = const Color(0xFFFF6B9A),
+    this.strokeWidth = 0,
+    this.strokeColor = Colors.black,
+    this.letterSpacing = 0,
+    this.lineHeight = 1.3,
+    this.curve = 0,
     this.shape = ShapeKind.roundedFrame,
     this.size = 160,
     this.imageBytes,
@@ -45,6 +56,19 @@ class StoryLayer {
   TextAlign align;
   TextHighlight highlight;
   bool shadow;
+  TextFill fill;
+
+  /// Second gradient color ([TextFill.gradient]).
+  Color color2;
+
+  /// Outline around the letters; 0 = none.
+  double strokeWidth;
+  Color strokeColor;
+  double letterSpacing;
+  double lineHeight;
+
+  /// Bends the text along an arc: -1 (smile) … 0 (straight) … 1 (rainbow).
+  double curve;
 
   /// Shape and image layers: base width in canvas units.
   ShapeKind shape;
@@ -67,6 +91,13 @@ class StoryLayer {
         align: align,
         highlight: highlight,
         shadow: shadow,
+        fill: fill,
+        color2: color2,
+        strokeWidth: strokeWidth,
+        strokeColor: strokeColor,
+        letterSpacing: letterSpacing,
+        lineHeight: lineHeight,
+        curve: curve,
         shape: shape,
         size: size,
         imageBytes: imageBytes,
@@ -90,24 +121,62 @@ class StoryLayer {
     };
   }
 
-  TextStyle get style {
+  static const _shadows = [
+    Shadow(color: Color(0x99000000), blurRadius: 8, offset: Offset(0, 2)),
+  ];
+
+  /// Text style with the given paint. Pass [foreground] for strokes; the
+  /// fill uses [color] (white under a gradient mask).
+  TextStyle textStyle({
+    Color? color,
+    Paint? foreground,
+    bool withShadow = false,
+  }) {
     final base = TextStyle(
-      color: color,
+      color: foreground == null ? (color ?? this.color) : null,
+      foreground: foreground,
       fontSize: fontSize,
-      height: 1.3,
-      shadows: shadow
-          ? const [
-              Shadow(
-                color: Color(0x99000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ]
-          : null,
+      height: lineHeight,
+      letterSpacing: letterSpacing,
+      shadows: withShadow ? _shadows : null,
     );
     // Emoji and symbols use the platform font so they render in color.
     return kind == LayerKind.emoji ? base : font.style(base);
   }
+
+  /// Plain style (solid fill + shadow): text field, emoji, previews.
+  TextStyle get style => textStyle(withShadow: shadow);
+
+  /// Shader for non-solid fills, or null for a flat color.
+  Gradient? get fillGradient => switch (fill) {
+        TextFill.solid => null,
+        TextFill.gradient => LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [color, color2],
+          ),
+        TextFill.gold => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFA67C00), Color(0xFFFFEBA8), Color(0xFFD4AF37),
+                Color(0xFFFFF6C8), Color(0xFF9C7400)],
+            stops: [0, 0.3, 0.5, 0.72, 1],
+          ),
+        TextFill.silver => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF6E7B85), Color(0xFFFFFFFF), Color(0xFFAEB6BF),
+                Color(0xFFF4F6F7), Color(0xFF7F8C8D)],
+            stops: [0, 0.3, 0.5, 0.72, 1],
+          ),
+        TextFill.rose => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFA85A66), Color(0xFFFAD4D8), Color(0xFFE8A0A7),
+                Color(0xFFFFE4E8), Color(0xFF9E4F5B)],
+            stops: [0, 0.3, 0.5, 0.72, 1],
+          ),
+      };
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -119,6 +188,13 @@ class StoryLayer {
         'align': align.name,
         'highlight': highlight.name,
         'shadow': shadow,
+        'fill': fill.name,
+        'color2': color2.toARGB32(),
+        'strokeWidth': strokeWidth,
+        'strokeColor': strokeColor.toARGB32(),
+        'letterSpacing': letterSpacing,
+        'lineHeight': lineHeight,
+        'curve': curve,
         'shape': shape.name,
         'size': size,
         if (imageBytes != null) 'image': base64Encode(imageBytes!),
@@ -138,6 +214,13 @@ class StoryLayer {
         align: _enum(TextAlign.values, j['align'], TextAlign.center),
         highlight: _enum(TextHighlight.values, j['highlight'], TextHighlight.none),
         shadow: j['shadow'] as bool? ?? false,
+        fill: _enum(TextFill.values, j['fill'], TextFill.solid),
+        color2: Color(j['color2'] as int? ?? 0xFFFF6B9A),
+        strokeWidth: (j['strokeWidth'] as num? ?? 0).toDouble(),
+        strokeColor: Color(j['strokeColor'] as int? ?? 0xFF000000),
+        letterSpacing: (j['letterSpacing'] as num? ?? 0).toDouble(),
+        lineHeight: (j['lineHeight'] as num? ?? 1.3).toDouble(),
+        curve: (j['curve'] as num? ?? 0).toDouble(),
         shape: _enum(ShapeKind.values, j['shape'], ShapeKind.roundedFrame),
         size: (j['size'] as num? ?? 160).toDouble(),
         imageBytes:

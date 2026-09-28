@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../core/config.dart';
+import '../data/formats.dart';
 import '../models/story_layer.dart';
 import '../state/editor_controller.dart';
 import 'story_view.dart';
@@ -23,35 +23,38 @@ class StoryCanvas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final viewScale = math.min(
-          constraints.maxWidth / AppConfig.canvasWidth,
-          constraints.maxHeight / AppConfig.canvasHeight,
-        );
-        return Center(
-          child: SizedBox(
-            width: AppConfig.canvasWidth * viewScale,
-            height: AppConfig.canvasHeight * viewScale,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: FittedBox(
-                child: SizedBox(
-                  width: AppConfig.canvasWidth,
-                  height: AppConfig.canvasHeight,
-                  child: ListenableBuilder(
-                    listenable: controller,
-                    builder: (context, _) => _CanvasContent(
-                      controller: controller,
-                      boundaryKey: boundaryKey,
-                      viewScale: viewScale,
-                      onEditLayer: onEditLayer,
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final canvas = controller.canvasSize;
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final viewScale = math.min(
+              constraints.maxWidth / canvas.width,
+              constraints.maxHeight / canvas.height,
+            );
+            return Center(
+              child: SizedBox(
+                width: canvas.width * viewScale,
+                height: canvas.height * viewScale,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: FittedBox(
+                    child: SizedBox(
+                      width: canvas.width,
+                      height: canvas.height,
+                      child: _CanvasContent(
+                        controller: controller,
+                        boundaryKey: boundaryKey,
+                        viewScale: viewScale,
+                        onEditLayer: onEditLayer,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -77,10 +80,6 @@ class _CanvasContent extends StatefulWidget {
 
 class _CanvasContentState extends State<_CanvasContent> {
   static const _snapDistance = 6.0;
-  static const _center = Offset(
-    AppConfig.canvasWidth / 2,
-    AppConfig.canvasHeight / 2,
-  );
 
   // Gesture bookkeeping.
   Offset _lastFocal = Offset.zero;
@@ -94,6 +93,7 @@ class _CanvasContentState extends State<_CanvasContent> {
   Offset _freePosition = Offset.zero;
 
   EditorController get _c => widget.controller;
+  Offset get _center => _c.canvasSize.center(Offset.zero);
 
   /// One undo step per gesture, taken lazily on the first real movement.
   void _recordOnce() {
@@ -127,8 +127,8 @@ class _CanvasContentState extends State<_CanvasContent> {
     _c.updateLayer(layer.id, record: false, (l) {
       if (move) {
         _freePosition = Offset(
-          (_freePosition.dx + delta.dx).clamp(0.0, AppConfig.canvasWidth),
-          (_freePosition.dy + delta.dy).clamp(0.0, AppConfig.canvasHeight),
+          (_freePosition.dx + delta.dx).clamp(0.0, _c.canvasSize.width),
+          (_freePosition.dy + delta.dy).clamp(0.0, _c.canvasSize.height),
         );
         _snapX = (_freePosition.dx - _center.dx).abs() < _snapDistance;
         _snapY = (_freePosition.dy - _center.dy).abs() < _snapDistance;
@@ -238,7 +238,12 @@ class _CanvasContentState extends State<_CanvasContent> {
         if (_dragging)
           IgnorePointer(
             child: CustomPaint(
-              painter: SafeZonePainter(snapX: _snapX, snapY: _snapY),
+              painter: SafeZonePainter(
+                snapX: _snapX,
+                snapY: _snapY,
+                // Instagram's UI only overlays stories.
+                showZones: _c.format == StoryFormat.story,
+              ),
             ),
           ),
       ],

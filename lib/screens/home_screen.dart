@@ -5,6 +5,7 @@ import '../core/locale_controller.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/palettes.dart';
+import '../data/formats.dart';
 import '../data/templates.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
@@ -53,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openEditor(
     StoryBackground bg, {
     List<StoryLayer> layers = const [],
+    StoryFormat format = StoryFormat.story,
     String? draftId,
     bool openBackgroundSheet = false,
   }) {
@@ -61,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => EditorScreen(
           initialBackground: bg,
           initialLayers: layers,
+          initialFormat: format,
           draftId: draftId,
           openBackgroundSheet: openBackgroundSheet,
         ),
@@ -79,7 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openDraft(String id) async {
     final draft = await DraftStore.instance.load(id);
     if (draft == null || !mounted) return;
-    _openEditor(draft.background, layers: draft.layers, draftId: id);
+    _openEditor(
+      draft.background,
+      layers: draft.layers,
+      format: draft.format,
+      draftId: id,
+    );
   }
 
   @override

@@ -6,9 +6,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../core/config.dart';
 import '../data/art.dart';
+import '../data/formats.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import 'styled_text.dart';
 
 /// Paints a story background (solid, gradient or pan/zoomed photo + dim).
 class StoryBackgroundView extends StatelessWidget {
@@ -27,18 +29,22 @@ class StoryBackgroundView extends StatelessWidget {
         );
       case BackgroundKind.image:
         final image = MemoryImage(background.imageBytes!);
+        final matrix = background.filterMatrix;
+        Widget filtered(Widget child) => matrix == null
+            ? child
+            : ColorFiltered(colorFilter: ColorFilter.matrix(matrix), child: child);
         final photo = Transform.translate(
           offset: background.imageOffset,
           child: Transform.scale(
             scale: background.imageScale,
-            child: Image(
-              image: image,
-              fit: background.imageFit == ImageFit.cover
-                  ? BoxFit.cover
-                  : BoxFit.contain,
-              width: AppConfig.canvasWidth,
-              height: AppConfig.canvasHeight,
-              gaplessPlayback: true,
+            child: SizedBox.expand(
+              child: Image(
+                image: image,
+                fit: background.imageFit == ImageFit.cover
+                    ? BoxFit.cover
+                    : BoxFit.contain,
+                gaplessPlayback: true,
+              ),
             ),
           ),
         );
@@ -50,15 +56,15 @@ class StoryBackgroundView extends StatelessWidget {
               if (background.imageFit == ImageFit.contain) ...[
                 ImageFiltered(
                   imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                  child: Image(
+                  child: filtered(Image(
                     image: image,
                     fit: BoxFit.cover,
                     gaplessPlayback: true,
-                  ),
+                  )),
                 ),
                 const ColoredBox(color: Color(0x33000000)),
               ],
-              photo,
+              filtered(photo),
               if (background.dim > 0)
                 ColoredBox(
                   color: Colors.black.withValues(alpha: background.dim),
@@ -103,11 +109,9 @@ class StoryLayerVisual extends StatelessWidget {
             border: border,
             boxShadow: selectionShadow,
           ),
-          child: Text(
-            layer.text,
-            textAlign: layer.align,
-            textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-            style: layer.style,
+          child: StyledText(
+            layer: layer,
+            direction: isRtl ? TextDirection.rtl : TextDirection.ltr,
           ),
         );
         if (layer.highlight == TextHighlight.blur) {
@@ -254,9 +258,11 @@ class StoryPreview extends StatelessWidget {
     super.key,
     required this.background,
     required this.layers,
+    this.format = StoryFormat.story,
     this.borderRadius = 12,
   });
 
+  final StoryFormat format;
   final StoryBackground background;
   final List<StoryLayer> layers;
   final double borderRadius;
@@ -264,13 +270,13 @@ class StoryPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: AppConfig.canvasWidth / AppConfig.canvasHeight,
+      aspectRatio: format.aspectRatio,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: FittedBox(
           child: SizedBox(
-            width: AppConfig.canvasWidth,
-            height: AppConfig.canvasHeight,
+            width: format.size.width,
+            height: format.size.height,
             child: IgnorePointer(
               child: Stack(
                 clipBehavior: Clip.hardEdge,
@@ -296,16 +302,26 @@ class StoryPreview extends StatelessWidget {
 /// Shown while dragging so users keep text out of those areas, plus
 /// center guides when a layer snaps to the middle.
 class SafeZonePainter extends CustomPainter {
-  SafeZonePainter({required this.snapX, required this.snapY});
+  SafeZonePainter({
+    required this.snapX,
+    required this.snapY,
+    this.showZones = true,
+  });
 
   static const topFraction = 0.14;
   static const bottomFraction = 0.20;
 
   final bool snapX;
   final bool snapY;
+  final bool showZones;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (showZones) _paintZones(canvas, size);
+    _paintGuides(canvas, size);
+  }
+
+  void _paintZones(Canvas canvas, Size size) {
     final shade = Paint()..color = const Color(0x40FF3B6B);
     final top = size.height * topFraction;
     final bottom = size.height * (1 - bottomFraction);
@@ -319,7 +335,9 @@ class SafeZonePainter extends CustomPainter {
       ..strokeWidth = 1;
     _dashed(canvas, Offset(0, top), Offset(size.width, top), dash);
     _dashed(canvas, Offset(0, bottom), Offset(size.width, bottom), dash);
+  }
 
+  void _paintGuides(Canvas canvas, Size size) {
     final guide = Paint()
       ..color = const Color(0xFFFFD54F)
       ..strokeWidth = 1.2;
@@ -350,5 +368,5 @@ class SafeZonePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SafeZonePainter old) =>
-      old.snapX != snapX || old.snapY != snapY;
+      old.snapX != snapX || old.snapY != snapY || old.showZones != showZones;
 }

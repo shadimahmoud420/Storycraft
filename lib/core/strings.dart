@@ -101,6 +101,51 @@ class S {
   String get style => _t('style');
   String get illustrations => _t('illustrations');
 
+  String get fontTab => _t('fontTab');
+  String get effects => _t('effects');
+  String get curveTab => _t('curveTab');
+  String get fillSolid => _t('fillSolid');
+  String get fillGradient => _t('fillGradient');
+  String get fillGold => _t('fillGold');
+  String get fillSilver => _t('fillSilver');
+  String get fillRose => _t('fillRose');
+  String get secondColor => _t('secondColor');
+  String get outline => _t('outline');
+  String get letterSpacing => _t('letterSpacing');
+  String get lineHeight => _t('lineHeight');
+  String get straight => _t('straight');
+  String get curveHint => _t('curveHint');
+  String get catModern => _t('catModern');
+  String get catKufi => _t('catKufi');
+  String get catNaskh => _t('catNaskh');
+  String get catCalligraphy => _t('catCalligraphy');
+  String get catDisplay => _t('catDisplay');
+  String get catSans => _t('catSans');
+  String get catSerif => _t('catSerif');
+  String get catScript => _t('catScript');
+  String get catHand => _t('catHand');
+
+  String get filters => _t('filters');
+  String get intensity => _t('intensity');
+  String get fNone => _t('fNone');
+  String get fVivid => _t('fVivid');
+  String get fWarm => _t('fWarm');
+  String get fCool => _t('fCool');
+  String get fVintage => _t('fVintage');
+  String get fMono => _t('fMono');
+  String get fFade => _t('fFade');
+  String get fDrama => _t('fDrama');
+  String get fRose => _t('fRose');
+  String get format => _t('format');
+  String get fmtStory => _t('fmtStory');
+  String get fmtPortrait => _t('fmtPortrait');
+  String get fmtSquare => _t('fmtSquare');
+  String get fmtWide => _t('fmtWide');
+  String get fmtStoryHint => _t('fmtStoryHint');
+  String get fmtPortraitHint => _t('fmtPortraitHint');
+  String get fmtSquareHint => _t('fmtSquareHint');
+  String get fmtWideHint => _t('fmtWideHint');
+
   static const _values = <String, Map<String, String>>{
     'ar': {
       'appName': 'StoryCraft',
@@ -150,6 +195,49 @@ class S {
       'tapToAddText': 'اضغط «نص» لإضافة كتابة',
       'saveFailed': 'تعذّر الحفظ، تحقق من صلاحية الصور',
       'angle': 'الاتجاه',
+      'filters': 'فلاتر',
+      'intensity': 'الشدة',
+      'fNone': 'بدون',
+      'fVivid': 'حيوي',
+      'fWarm': 'دافئ',
+      'fCool': 'بارد',
+      'fVintage': 'قديم',
+      'fMono': 'أبيض وأسود',
+      'fFade': 'باهت',
+      'fDrama': 'درامي',
+      'fRose': 'وردي',
+      'format': 'المقاس',
+      'fmtStory': 'قصة 9:16',
+      'fmtPortrait': 'منشور 4:5',
+      'fmtSquare': 'مربع 1:1',
+      'fmtWide': 'عريض 16:9',
+      'fmtStoryHint': 'إنستغرام، سناب شات، تيك توك، حالة واتساب',
+      'fmtPortraitHint': 'منشور إنستغرام وفيسبوك',
+      'fmtSquareHint': 'منشور مربع لكل المنصات',
+      'fmtWideHint': 'يوتيوب وتويتر (إكس) والعروض',
+      'fontTab': 'الخط',
+      'effects': 'التأثيرات',
+      'curveTab': 'الانحناء',
+      'fillSolid': 'لون واحد',
+      'fillGradient': 'تدرّج',
+      'fillGold': 'ذهبي',
+      'fillSilver': 'فضي',
+      'fillRose': 'وردي ذهبي',
+      'secondColor': 'اللون الثاني',
+      'outline': 'حدود الحروف',
+      'letterSpacing': 'تباعد الحروف',
+      'lineHeight': 'تباعد الأسطر',
+      'straight': 'مستقيم',
+      'curveHint': 'اسحب لليسار أو اليمين لثني النص على شكل قوس',
+      'catModern': 'عصري',
+      'catKufi': 'كوفي',
+      'catNaskh': 'نسخ',
+      'catCalligraphy': 'مخطوط',
+      'catDisplay': 'عناوين',
+      'catSans': 'بسيط',
+      'catSerif': 'كلاسيكي',
+      'catScript': 'مزخرف',
+      'catHand': 'يدوي',
       'templates': 'قوالب جاهزة',
       'templatesHint': 'تصاميم للمناسبات بضغطة واحدة',
       'drafts': 'مسوداتي',
@@ -237,6 +325,49 @@ class S {
       'tapToAddText': 'Tap “Text” to start writing',
       'saveFailed': 'Could not save. Check Photos permission',
       'angle': 'Direction',
+      'filters': 'Filters',
+      'intensity': 'Intensity',
+      'fNone': 'None',
+      'fVivid': 'Vivid',
+      'fWarm': 'Warm',
+      'fCool': 'Cool',
+      'fVintage': 'Vintage',
+      'fMono': 'Mono',
+      'fFade': 'Fade',
+      'fDrama': 'Drama',
+      'fRose': 'Rose',
+      'format': 'Size',
+      'fmtStory': 'Story 9:16',
+      'fmtPortrait': 'Post 4:5',
+      'fmtSquare': 'Square 1:1',
+      'fmtWide': 'Wide 16:9',
+      'fmtStoryHint': 'Instagram, Snapchat, TikTok, WhatsApp status',
+      'fmtPortraitHint': 'Instagram & Facebook post',
+      'fmtSquareHint': 'Square post for any platform',
+      'fmtWideHint': 'YouTube, X and presentations',
+      'fontTab': 'Font',
+      'effects': 'Effects',
+      'curveTab': 'Curve',
+      'fillSolid': 'Solid',
+      'fillGradient': 'Gradient',
+      'fillGold': 'Gold',
+      'fillSilver': 'Silver',
+      'fillRose': 'Rose gold',
+      'secondColor': 'Second color',
+      'outline': 'Outline',
+      'letterSpacing': 'Letter spacing',
+      'lineHeight': 'Line height',
+      'straight': 'Straight',
+      'curveHint': 'Slide to bend the text into an arc',
+      'catModern': 'Modern',
+      'catKufi': 'Kufi',
+      'catNaskh': 'Naskh',
+      'catCalligraphy': 'Calligraphy',
+      'catDisplay': 'Display',
+      'catSans': 'Sans',
+      'catSerif': 'Serif',
+      'catScript': 'Script',
+      'catHand': 'Handwritten',
       'templates': 'Templates',
       'templatesHint': 'One-tap designs for every occasion',
       'drafts': 'My drafts',

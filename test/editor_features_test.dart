@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:storycraft/data/art.dart';
 import 'package:storycraft/data/fonts.dart';
 import 'package:storycraft/data/quotes.dart';
@@ -153,7 +152,8 @@ void main() {
     final c = EditorController(const StoryBackground.solid(Colors.white));
     final g = c.addArt('lantern_garland');
     expect(g.size, 360);
-    expect(g.position, const Offset(180, 150));
+    expect(g.position.dx, 180);
+    expect(g.position.dy, lessThan(c.canvasSize.height * 0.3));
     expect(c.addArt('crescent').size, 150);
   });
 
@@ -165,7 +165,6 @@ void main() {
 
   testWidgets('bundled fonts render offline and templates preview',
       (tester) async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: Wrap(

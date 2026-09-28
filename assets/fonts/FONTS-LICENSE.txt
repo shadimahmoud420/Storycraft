@@ -2,3 +2,4 @@ The font files in this folder come from Google Fonts (https://fonts.google.com)
 and are licensed under the SIL Open Font License 1.1
 (https://openfontlicense.org). They are bundled unmodified so the app works
 offline. Each family's copyright belongs to its respective authors.
+Regenerate with: python3 tool/fonts_catalog.py

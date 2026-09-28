@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../data/formats.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
 
@@ -17,8 +18,9 @@ class DraftSummary {
 }
 
 class LoadedDraft {
-  const LoadedDraft(this.background, this.layers);
+  const LoadedDraft(this.background, this.layers, this.format);
 
+  final StoryFormat format;
   final StoryBackground background;
   final List<StoryLayer> layers;
 }
@@ -69,6 +71,7 @@ class DraftStore {
     String id,
     StoryBackground background,
     List<StoryLayer> layers, {
+    StoryFormat format = StoryFormat.story,
     Uint8List? thumbnail,
   }) async {
     final dir = Directory('${(await _root()).path}/$id');
@@ -88,6 +91,7 @@ class DraftStore {
     }
     await File('${dir.path}/story.json').writeAsString(jsonEncode({
       'version': 1,
+      'format': format.name,
       'background': background.toJson(),
       'layers': [for (final l in layers) l.toJson()],
     }));
@@ -111,7 +115,11 @@ class DraftStore {
         for (final l in json['layers'] as List)
           StoryLayer.fromJson(l as Map<String, dynamic>),
       ];
-      return LoadedDraft(background, layers);
+      return LoadedDraft(
+        background,
+        layers,
+        StoryFormat.byName(json['format']),
+      );
     } catch (_) {
       return null;
     }

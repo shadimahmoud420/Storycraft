@@ -4,7 +4,7 @@ publish_to: 'none'
 
 # version: <versionName>+<versionCode/buildNumber>
 # Increase the number after + with every upload to Google Play / App Store.
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ^3.6.0
@@ -16,7 +16,6 @@ dependencies:
     sdk: flutter
 
   image_picker: ^1.1.2
-  google_fonts: ^6.2.1
   image: ^4.3.0
   path_provider: ^2.1.5
   share_plus: ^13.0.0
@@ -36,11 +35,260 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # BEGIN GENERATED FONTS (tool/fonts_catalog.py)
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-400.ttf
+        - asset: assets/fonts/Cairo-500.ttf
+          weight: 500
+        - asset: assets/fonts/Cairo-600.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo-700.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo-800.ttf
+          weight: 800
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-400.ttf
+    - family: Almarai
+      fonts:
+        - asset: assets/fonts/Almarai-400.ttf
+    - family: Changa
+      fonts:
+        - asset: assets/fonts/Changa-400.ttf
+    - family: IBM Plex Sans Arabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-400.ttf
+    - family: Readex Pro
+      fonts:
+        - asset: assets/fonts/ReadexPro-400.ttf
+    - family: Alexandria
+      fonts:
+        - asset: assets/fonts/Alexandria-400.ttf
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-400.ttf
+    - family: Noto Sans Arabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-400.ttf
+    - family: Mada
+      fonts:
+        - asset: assets/fonts/Mada-400.ttf
+    - family: Zain
+      fonts:
+        - asset: assets/fonts/Zain-400.ttf
+    - family: Beiruti
+      fonts:
+        - asset: assets/fonts/Beiruti-400.ttf
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik-400.ttf
+    - family: Baloo Bhaijaan 2
+      fonts:
+        - asset: assets/fonts/BalooBhaijaan2-400.ttf
+    - family: Lemonada
+      fonts:
+        - asset: assets/fonts/Lemonada-400.ttf
+    - family: Playpen Sans Arabic
+      fonts:
+        - asset: assets/fonts/PlaypenSansArabic-400.ttf
+    - family: Reem Kufi
+      fonts:
+        - asset: assets/fonts/ReemKufi-400.ttf
+    - family: Kufam
+      fonts:
+        - asset: assets/fonts/Kufam-400.ttf
+    - family: Noto Kufi Arabic
+      fonts:
+        - asset: assets/fonts/NotoKufiArabic-400.ttf
+    - family: Handjet
+      fonts:
+        - asset: assets/fonts/Handjet-400.ttf
+    - family: Reem Kufi Fun
+      fonts:
+        - asset: assets/fonts/ReemKufiFun-400.ttf
+    - family: Qahiri
+      fonts:
+        - asset: assets/fonts/Qahiri-400.ttf
+    - family: Blaka
+      fonts:
+        - asset: assets/fonts/Blaka-400.ttf
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-400.ttf
+    - family: Amiri Quran
+      fonts:
+        - asset: assets/fonts/AmiriQuran-400.ttf
+    - family: Scheherazade New
+      fonts:
+        - asset: assets/fonts/ScheherazadeNew-400.ttf
+    - family: Noto Naskh Arabic
+      fonts:
+        - asset: assets/fonts/NotoNaskhArabic-400.ttf
+    - family: Lateef
+      fonts:
+        - asset: assets/fonts/Lateef-400.ttf
+    - family: Markazi Text
+      fonts:
+        - asset: assets/fonts/MarkaziText-400.ttf
+    - family: Harmattan
+      fonts:
+        - asset: assets/fonts/Harmattan-400.ttf
+    - family: Mirza
+      fonts:
+        - asset: assets/fonts/Mirza-400.ttf
+    - family: Ruwudu
+      fonts:
+        - asset: assets/fonts/Ruwudu-400.ttf
+    - family: Aref Ruqaa
+      fonts:
+        - asset: assets/fonts/ArefRuqaa-400.ttf
+    - family: Rakkas
+      fonts:
+        - asset: assets/fonts/Rakkas-400.ttf
+    - family: Gulzar
+      fonts:
+        - asset: assets/fonts/Gulzar-400.ttf
+    - family: Noto Nastaliq Urdu
+      fonts:
+        - asset: assets/fonts/NotoNastaliqUrdu-400.ttf
+    - family: Alkalami
+      fonts:
+        - asset: assets/fonts/Alkalami-400.ttf
+    - family: Katibeh
+      fonts:
+        - asset: assets/fonts/Katibeh-400.ttf
+    - family: Lalezar
+      fonts:
+        - asset: assets/fonts/Lalezar-400.ttf
+    - family: El Messiri
+      fonts:
+        - asset: assets/fonts/ElMessiri-400.ttf
+    - family: Jomhuria
+      fonts:
+        - asset: assets/fonts/Jomhuria-400.ttf
+    - family: Marhey
+      fonts:
+        - asset: assets/fonts/Marhey-400.ttf
+    - family: Badeen Display
+      fonts:
+        - asset: assets/fonts/BadeenDisplay-400.ttf
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-400.ttf
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-400.ttf
+    - family: Raleway
+      fonts:
+        - asset: assets/fonts/Raleway-400.ttf
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato-400.ttf
+    - family: Josefin Sans
+      fonts:
+        - asset: assets/fonts/JosefinSans-400.ttf
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-400.ttf
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-400.ttf
+    - family: Space Grotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-400.ttf
+    - family: Comfortaa
+      fonts:
+        - asset: assets/fonts/Comfortaa-400.ttf
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-400.ttf
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather-400.ttf
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-400.ttf
+    - family: Cormorant Garamond
+      fonts:
+        - asset: assets/fonts/CormorantGaramond-400.ttf
+    - family: Abril Fatface
+      fonts:
+        - asset: assets/fonts/AbrilFatface-400.ttf
+    - family: Alfa Slab One
+      fonts:
+        - asset: assets/fonts/AlfaSlabOne-400.ttf
+    - family: Pacifico
+      fonts:
+        - asset: assets/fonts/Pacifico-400.ttf
+    - family: Lobster
+      fonts:
+        - asset: assets/fonts/Lobster-400.ttf
+    - family: Dancing Script
+      fonts:
+        - asset: assets/fonts/DancingScript-400.ttf
+    - family: Great Vibes
+      fonts:
+        - asset: assets/fonts/GreatVibes-400.ttf
+    - family: Satisfy
+      fonts:
+        - asset: assets/fonts/Satisfy-400.ttf
+    - family: Sacramento
+      fonts:
+        - asset: assets/fonts/Sacramento-400.ttf
+    - family: Kaushan Script
+      fonts:
+        - asset: assets/fonts/KaushanScript-400.ttf
+    - family: Yellowtail
+      fonts:
+        - asset: assets/fonts/Yellowtail-400.ttf
+    - family: Parisienne
+      fonts:
+        - asset: assets/fonts/Parisienne-400.ttf
+    - family: Allura
+      fonts:
+        - asset: assets/fonts/Allura-400.ttf
+    - family: Bebas Neue
+      fonts:
+        - asset: assets/fonts/BebasNeue-400.ttf
+    - family: Oswald
+      fonts:
+        - asset: assets/fonts/Oswald-400.ttf
+    - family: Anton
+      fonts:
+        - asset: assets/fonts/Anton-400.ttf
+    - family: Righteous
+      fonts:
+        - asset: assets/fonts/Righteous-400.ttf
+    - family: Archivo Black
+      fonts:
+        - asset: assets/fonts/ArchivoBlack-400.ttf
+    - family: Bangers
+      fonts:
+        - asset: assets/fonts/Bangers-400.ttf
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka-400.ttf
+    - family: Caveat
+      fonts:
+        - asset: assets/fonts/Caveat-400.ttf
+    - family: Permanent Marker
+      fonts:
+        - asset: assets/fonts/PermanentMarker-400.ttf
+    - family: Amatic SC
+      fonts:
+        - asset: assets/fonts/AmaticSC-400.ttf
+    - family: Shadows Into Light
+      fonts:
+        - asset: assets/fonts/ShadowsIntoLight-400.ttf
+    - family: Indie Flower
+      fonts:
+        - asset: assets/fonts/IndieFlower-400.ttf
+  # END GENERATED FONTS
   assets:
     - assets/icon/
     - assets/stickers/
-    # Bundled Google Fonts: work offline (google_fonts loads these first).
-    - google_fonts/
 
 # dart run flutter_launcher_icons
 flutter_launcher_icons:

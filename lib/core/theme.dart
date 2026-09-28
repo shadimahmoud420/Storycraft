@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
@@ -20,10 +19,10 @@ class AppTheme {
       colorScheme: scheme,
       useMaterial3: true,
       brightness: brightness,
+      // Bundled Cairo covers Arabic and Latin nicely for the app chrome.
+      fontFamily: 'Cairo',
     );
     return base.copyWith(
-      // Cairo covers Arabic and Latin nicely for the app chrome.
-      textTheme: GoogleFonts.cairoTextTheme(base.textTheme),
       bottomSheetTheme: const BottomSheetThemeData(
         showDragHandle: true,
         shape: RoundedRectangleBorder(

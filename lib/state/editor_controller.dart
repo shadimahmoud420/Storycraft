@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../data/art.dart';
+import '../data/filters.dart';
+import '../data/formats.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
@@ -11,8 +13,9 @@ import '../services/image_processing.dart';
 enum ImageOperation { natural, enhance }
 
 class _Snapshot {
-  _Snapshot(this.background, this.layers, this.selectedId);
+  _Snapshot(this.format, this.background, this.layers, this.selectedId);
 
+  final StoryFormat format;
   final StoryBackground background;
   final List<StoryLayer> layers;
   final String? selectedId;
@@ -20,13 +23,18 @@ class _Snapshot {
 
 /// Holds the whole story being edited, with undo/redo history.
 class EditorController extends ChangeNotifier {
-  EditorController(this._background, {List<StoryLayer> layers = const []}) {
+  EditorController(
+    this._background, {
+    List<StoryLayer> layers = const [],
+    StoryFormat format = StoryFormat.story,
+  }) : _format = format {
     // Fresh ids: template layers share placeholder ids.
     _layers.addAll(layers.map((l) => l.copyWith(id: _newId())));
   }
 
   static const _maxHistory = 40;
 
+  StoryFormat _format;
   StoryBackground _background;
   final List<StoryLayer> _layers = [];
   String? _selectedId;
@@ -36,6 +44,8 @@ class EditorController extends ChangeNotifier {
   final List<_Snapshot> _undo = [];
   final List<_Snapshot> _redo = [];
 
+  StoryFormat get format => _format;
+  Size get canvasSize => _format.size;
   StoryBackground get background => _background;
   List<StoryLayer> get layers => List.unmodifiable(_layers);
   String? get selectedId => _selectedId;
@@ -53,6 +63,7 @@ class EditorController extends ChangeNotifier {
   // --- History --------------------------------------------------------------
 
   _Snapshot _snapshot() => _Snapshot(
+        _format,
         _background,
         [for (final l in _layers) l.clone()],
         _selectedId,
@@ -79,12 +90,28 @@ class EditorController extends ChangeNotifier {
   }
 
   void _restore(_Snapshot s) {
+    _format = s.format;
     _background = s.background;
     _layers
       ..clear()
       ..addAll(s.layers.map((l) => l.clone()));
     _selectedId =
         _layers.any((l) => l.id == s.selectedId) ? s.selectedId : null;
+    _changed();
+  }
+
+  // --- Format ---------------------------------------------------------------
+
+  /// Switches the canvas ratio; layers keep their relative positions.
+  void setFormat(StoryFormat format) {
+    if (format == _format) return;
+    checkpoint();
+    final ratio = format.size.height / _format.size.height;
+    for (final l in _layers) {
+      l.position = Offset(l.position.dx, l.position.dy * ratio);
+    }
+    _format = format;
+    _background = _background.copyWith(imageOffset: Offset.zero, imageScale: 1);
     _changed();
   }
 
@@ -111,6 +138,14 @@ class EditorController extends ChangeNotifier {
     checkpoint();
     final next = _background.dim >= 0.59 ? 0.0 : _background.dim + 0.2;
     _background = _background.copyWith(dim: next);
+    _changed();
+  }
+
+  /// Live filter change (call [checkpoint] when the filter sheet opens).
+  void setFilter(PhotoFilter filter, double intensity) {
+    if (!_background.isImage) return;
+    _background =
+        _background.copyWith(filter: filter, filterIntensity: intensity);
     _changed();
   }
 
@@ -200,7 +235,7 @@ class EditorController extends ChangeNotifier {
         kind: LayerKind.art,
         text: name,
         size: wide ? 360 : 150,
-        position: const Offset(180, 150),
+        position: Offset(180, canvasSize.height * 0.23),
       ),
       keepPosition: wide,
     );
@@ -223,14 +258,16 @@ class EditorController extends ChangeNotifier {
   /// that no existing layer occupies, so new items never cover old ones.
   Offset _freeSpot() {
     const x = 180.0, minGap = 56.0;
-    const candidates = [320.0, 390.0, 250.0, 460.0, 180.0, 520.0, 120.0];
-    for (final y in candidates) {
+    final h = canvasSize.height;
+    const fractions = [0.5, 0.61, 0.39, 0.72, 0.28, 0.81, 0.19];
+    for (final f in fractions) {
+      final y = h * f;
       if (_layers.every((l) => (l.position.dx - x).abs() > 120 ||
           (l.position.dy - y).abs() >= minGap)) {
         return Offset(x, y);
       }
     }
-    return const Offset(x, 320);
+    return Offset(x, h / 2);
   }
 
   void select(String? id) {

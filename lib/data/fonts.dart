@@ -1,28 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// A Google Font offered in the text editor.
+part 'font_catalog.g.dart';
+
+/// Style families shown as filter chips in the font picker.
+enum FontCategory {
+  // Arabic
+  modern, kufi, naskh, calligraphy,
+  // Both
+  display,
+  // English
+  sans, serif, script, hand,
+}
+
+/// A bundled font (assets/fonts, registered in pubspec.yaml by
+/// tool/fonts_catalog.py). Works fully offline.
 @immutable
 class StoryFont {
-  const StoryFont(this.family, {required this.arabic, this.label});
+  const StoryFont(
+    this.family, {
+    required this.arabic,
+    this.category = FontCategory.modern,
+    this.label,
+  });
 
   final String family;
   final bool arabic;
+  final FontCategory category;
 
   /// Display name in the picker (defaults to [family]).
   final String? label;
 
   String get displayName => label ?? family;
 
-  /// Applies the font to [base]. Falls back to the platform font if the
-  /// family cannot be resolved (e.g. removed from Google Fonts).
-  TextStyle style([TextStyle? base]) {
-    try {
-      return GoogleFonts.getFont(family, textStyle: base);
-    } catch (_) {
-      return base ?? const TextStyle();
-    }
-  }
+  TextStyle style([TextStyle? base]) =>
+      (base ?? const TextStyle()).copyWith(fontFamily: family);
 
   @override
   bool operator ==(Object other) =>
@@ -35,39 +46,16 @@ class StoryFont {
 class StoryFonts {
   StoryFonts._();
 
-  /// Popular Arabic fonts (all include Latin glyphs too).
-  static const arabic = <StoryFont>[
-    StoryFont('Cairo', arabic: true, label: 'القاهرة'),
-    StoryFont('Tajawal', arabic: true, label: 'تجوال'),
-    StoryFont('Almarai', arabic: true, label: 'المراعي'),
-    StoryFont('Amiri', arabic: true, label: 'أميري'),
-    StoryFont('Reem Kufi', arabic: true, label: 'ريم كوفي'),
-    StoryFont('El Messiri', arabic: true, label: 'المسيري'),
-    StoryFont('Changa', arabic: true, label: 'تشانغا'),
-    StoryFont('Lalezar', arabic: true, label: 'لاله‌زار'),
-    StoryFont('Aref Ruqaa', arabic: true, label: 'رقعة'),
-    StoryFont('Lateef', arabic: true, label: 'لطيف'),
-    StoryFont('Rakkas', arabic: true, label: 'رقّاص'),
-    StoryFont('Markazi Text', arabic: true, label: 'مركزي'),
-  ];
+  static const arabic = _arabicFonts;
+  static const english = _englishFonts;
+  static const all = <StoryFont>[..._arabicFonts, ..._englishFonts];
 
-  /// Popular English fonts.
-  static const english = <StoryFont>[
-    StoryFont('Montserrat', arabic: false),
-    StoryFont('Poppins', arabic: false),
-    StoryFont('Playfair Display', arabic: false),
-    StoryFont('Bebas Neue', arabic: false),
-    StoryFont('Oswald', arabic: false),
-    StoryFont('Anton', arabic: false),
-    StoryFont('Pacifico', arabic: false),
-    StoryFont('Lobster', arabic: false),
-    StoryFont('Dancing Script', arabic: false),
-    StoryFont('Great Vibes', arabic: false),
-    StoryFont('Caveat', arabic: false),
-    StoryFont('Righteous', arabic: false),
-  ];
-
-  static const all = <StoryFont>[...arabic, ...english];
+  static List<FontCategory> categories({required bool arabic}) => [
+        for (final c in FontCategory.values)
+          if ((arabic ? _arabicFonts : _englishFonts)
+              .any((f) => f.category == c))
+            c,
+      ];
 
   /// Resolves a saved family name back to a font (drafts, brand kit).
   static StoryFont byFamily(String family) =>
@@ -75,11 +63,9 @@ class StoryFonts {
       StoryFont(family, arabic: false);
 
   static StoryFont defaultFor(String text) =>
-      _hasArabic(text) ? arabic.first : english.first;
+      hasArabic(text) ? arabic.first : english.first;
 
-  static bool _hasArabic(String text) =>
+  static bool hasArabic(String text) =>
       RegExp(r'[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]')
           .hasMatch(text);
-
-  static bool hasArabic(String text) => _hasArabic(text);
 }

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../data/filters.dart';
+
 enum BackgroundKind { solid, gradient, image }
 
 enum ImageFit { cover, contain }
@@ -21,6 +23,8 @@ class StoryBackground {
     this.imageOffset = Offset.zero,
     this.imageScale = 1,
     this.dim = 0,
+    this.filter = PhotoFilter.none,
+    this.filterIntensity = 1,
   });
 
   const StoryBackground.solid(Color color)
@@ -62,6 +66,14 @@ class StoryBackground {
   /// Black overlay strength (0 – 0.6) that makes text on photos readable.
   final double dim;
 
+  /// Non-destructive photo filter and its strength (0 – 1).
+  final PhotoFilter filter;
+  final double filterIntensity;
+
+  List<double>? get filterMatrix => filter == PhotoFilter.none
+      ? null
+      : PhotoFilters.blended(filter, filterIntensity);
+
   bool get isImage => kind == BackgroundKind.image;
   bool get isModified =>
       isImage && !identical(imageBytes, originalImageBytes);
@@ -73,6 +85,8 @@ class StoryBackground {
     double? imageScale,
     double? dim,
     double? gradientAngle,
+    PhotoFilter? filter,
+    double? filterIntensity,
   }) =>
       StoryBackground._(
         kind: kind,
@@ -85,6 +99,8 @@ class StoryBackground {
         imageOffset: imageOffset ?? this.imageOffset,
         imageScale: imageScale ?? this.imageScale,
         dim: dim ?? this.dim,
+        filter: filter ?? this.filter,
+        filterIntensity: filterIntensity ?? this.filterIntensity,
       );
 
   StoryBackground withImage(Uint8List bytes) => copyWith(imageBytes: bytes);
@@ -121,6 +137,8 @@ class StoryBackground {
         'dy': imageOffset.dy,
         'scale': imageScale,
         'dim': dim,
+        'filter': filter.name,
+        'filterIntensity': filterIntensity,
       };
 
   factory StoryBackground.fromJson(
@@ -148,6 +166,11 @@ class StoryBackground {
       ),
       imageScale: (j['scale'] as num? ?? 1).toDouble(),
       dim: (j['dim'] as num? ?? 0).toDouble(),
+      filter: PhotoFilter.values
+              .where((f) => f.name == j['filter'])
+              .firstOrNull ??
+          PhotoFilter.none,
+      filterIntensity: (j['filterIntensity'] as num? ?? 1).toDouble(),
     );
   }
 }
