@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:storycraft/data/art.dart';
 import 'package:storycraft/data/fonts.dart';
 import 'package:storycraft/data/quotes.dart';
 import 'package:storycraft/data/templates.dart';
@@ -131,10 +133,28 @@ void main() {
       for (final l in c.layers.where((l) => l.isText)) {
         expect(StoryFonts.all, contains(l.font), reason: l.font.family);
       }
+      for (final l in c.layers.where((l) => l.kind == LayerKind.art)) {
+        expect(File(StoryArt.asset(l.text)).existsSync(), isTrue,
+            reason: l.text);
+      }
     }
     for (final c in TemplateCategory.values) {
       expect(storyTemplates.where((t) => t.category == c), isNotEmpty);
     }
+  });
+
+  test('every sticker illustration is bundled', () {
+    for (final name in StoryArt.all) {
+      expect(File(StoryArt.asset(name)).existsSync(), isTrue, reason: name);
+    }
+  });
+
+  test('wide art spans the top instead of the center', () {
+    final c = EditorController(const StoryBackground.solid(Colors.white));
+    final g = c.addArt('lantern_garland');
+    expect(g.size, 360);
+    expect(g.position, const Offset(180, 150));
+    expect(c.addArt('crescent').size, 150);
   });
 
   test('every quote category has content', () {

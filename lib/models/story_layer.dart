@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../data/fonts.dart';
 
-enum LayerKind { text, emoji, shape, image }
+enum LayerKind { text, emoji, shape, image, art }
 
 enum ShapeKind { roundedFrame, rectFrame, circleFrame, line, label }
 
@@ -14,7 +14,8 @@ enum ShapeKind { roundedFrame, rectFrame, circleFrame, line, label }
 enum TextHighlight { none, solid, soft, blur }
 
 /// One movable, scalable, rotatable element on the story canvas: text,
-/// emoji/symbol sticker, decorative shape or image (brand logo).
+/// emoji/symbol sticker, decorative shape, image (brand logo) or cartoon
+/// illustration ([text] holds the art name for [LayerKind.art]).
 /// [position] is the element's center in canvas coordinates (360 x 640).
 class StoryLayer {
   StoryLayer({

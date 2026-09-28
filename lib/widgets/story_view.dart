@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../core/config.dart';
+import '../data/art.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
@@ -139,6 +141,18 @@ class StoryLayerVisual extends StatelessWidget {
           child: CustomPaint(
             size: size,
             painter: ShapePainter(layer.shape, layer.color),
+          ),
+        );
+      case LayerKind.art:
+        return Container(
+          decoration: BoxDecoration(
+            border: border,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SvgPicture.asset(
+            StoryArt.asset(layer.text),
+            width: layer.size,
+            fit: BoxFit.contain,
           ),
         );
       case LayerKind.image:

@@ -22,6 +22,7 @@ dependencies:
   share_plus: ^13.0.0
   gal: ^2.3.0
   shared_preferences: ^2.3.3
+  flutter_svg: ^2.0.10
 
   instagram_story_share:
     path: packages/instagram_story_share
@@ -37,6 +38,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+    - assets/stickers/
     # Bundled Google Fonts: work offline (google_fonts loads these first).
     - google_fonts/
 

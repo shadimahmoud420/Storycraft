@@ -99,6 +99,7 @@ class S {
   String get english => _t('english');
   String get photoHint => _t('photoHint');
   String get style => _t('style');
+  String get illustrations => _t('illustrations');
 
   static const _values = <String, Map<String, String>>{
     'ar': {
@@ -186,6 +187,7 @@ class S {
       'english': 'English',
       'photoHint': 'اسحب الصورة لتحريكها وكبّرها بإصبعين',
       'style': 'التنسيق',
+      'illustrations': 'رسومات',
     },
     'en': {
       'appName': 'StoryCraft',
@@ -272,6 +274,7 @@ class S {
       'english': 'English',
       'photoHint': 'Drag to move the photo, pinch to zoom',
       'style': 'Style',
+      'illustrations': 'Art',
     },
   };
 }

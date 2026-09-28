@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../data/art.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
@@ -189,10 +190,29 @@ class EditorController extends ChangeNotifier {
         size: 120,
       ));
 
-  /// Adds a ready-made layer (templates) with a fresh id.
-  StoryLayer addLayer(StoryLayer layer) {
+  /// Cartoon illustration from assets/stickers. Wide art (garlands,
+  /// bunting) spans the top of the story instead of the center.
+  StoryLayer addArt(String name) {
+    final wide = StoryArt.isWide(name);
+    return addLayer(
+      StoryLayer(
+        id: _newId(),
+        kind: LayerKind.art,
+        text: name,
+        size: wide ? 360 : 150,
+        position: const Offset(180, 150),
+      ),
+      keepPosition: wide,
+    );
+  }
+
+  /// Adds a ready-made layer with a fresh id, placed in a free spot.
+  StoryLayer addLayer(StoryLayer layer, {bool keepPosition = false}) {
     checkpoint();
-    final l = layer.copyWith(id: _newId(), position: _freeSpot());
+    final l = layer.copyWith(
+      id: _newId(),
+      position: keepPosition ? layer.position : _freeSpot(),
+    );
     _layers.add(l);
     _selectedId = l.id;
     _changed();

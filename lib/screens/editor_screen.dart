@@ -145,6 +145,8 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<void> _addSticker() async {
     final choice = await showStickerSheet(context);
     switch (choice) {
+      case ArtChoice(:final name):
+        _controller.addArt(name);
       case EmojiChoice(:final text):
         _controller.addEmoji(text);
       case ShapeChoice(:final shape):
@@ -173,6 +175,7 @@ class _EditorScreenState extends State<EditorScreen> {
       case LayerKind.emoji:
         await _editColor(layer);
       case LayerKind.image:
+      case LayerKind.art:
         break;
     }
   }
@@ -457,7 +460,8 @@ class _EditorScreenState extends State<EditorScreen> {
                     ),
                     if (c.selected != null)
                       _SelectionBar(
-                        canEdit: c.selected!.kind != LayerKind.image,
+                        canEdit: c.selected!.kind != LayerKind.image &&
+                            c.selected!.kind != LayerKind.art,
                         editLabel: c.selected!.isText ? s.text : s.style,
                         onEdit: () => _editLayer(c.selected!),
                         onDuplicate: () => c.duplicateLayer(c.selectedId!),
