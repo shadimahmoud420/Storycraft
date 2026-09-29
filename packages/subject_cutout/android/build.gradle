@@ -1,0 +1,23 @@
+group = "com.storycraft.subject_cutout"
+version = "1.0"
+
+apply plugin: "com.android.library"
+
+android {
+    namespace = "com.storycraft.subject_cutout"
+    compileSdk = 35
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    defaultConfig {
+        minSdk = 24
+    }
+}
+
+dependencies {
+    // On-device subject segmentation, delivered through Google Play services.
+    implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
+}

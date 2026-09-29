@@ -25,6 +25,8 @@ dependencies:
 
   instagram_story_share:
     path: packages/instagram_story_share
+  subject_cutout:
+    path: packages/subject_cutout
 
 dev_dependencies:
   flutter_test:

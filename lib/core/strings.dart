@@ -61,6 +61,13 @@ class S {
   String get tapToAddText => _t('tapToAddText');
   String get saveFailed => _t('saveFailed');
   String get angle => _t('angle');
+  String get removeBg => _t('removeBg');
+  String get removeBgDone => _t('removeBgDone');
+  String get removeBgNoSubject => _t('removeBgNoSubject');
+  String get removeBgUnsupported => _t('removeBgUnsupported');
+  String get removeBgPreparing => _t('removeBgPreparing');
+  String get removingBg => _t('removingBg');
+  String get addPhoto => _t('addPhoto');
 
   String get templates => _t('templates');
   String get templatesHint => _t('templatesHint');
@@ -228,6 +235,13 @@ class S {
       'tapToAddText': 'اضغط «نص» لإضافة كتابة',
       'saveFailed': 'تعذّر الحفظ، تحقق من صلاحية الصور',
       'angle': 'الاتجاه',
+      'removeBg': 'إزالة الخلفية',
+      'removeBgDone': 'تم التفريغ ✨ غيّر الخلفية من «الخلفية»',
+      'removeBgNoSubject': 'لم أجد شخصًا أو عنصرًا واضحًا في الصورة',
+      'removeBgUnsupported': 'إزالة الخلفية غير مدعومة على هذا الجهاز',
+      'removeBgPreparing': 'يتم تجهيز أداة التفريغ لأول مرة… حاول بعد دقيقة',
+      'removingBg': 'جارٍ تفريغ الصورة…',
+      'addPhoto': 'صورة',
       'sigOrnate': 'مزخرف',
       'sigLaurel': 'إكليل غار',
       'sigRoyal': 'ملكي',
@@ -389,6 +403,13 @@ class S {
       'tapToAddText': 'Tap “Text” to start writing',
       'saveFailed': 'Could not save. Check Photos permission',
       'angle': 'Direction',
+      'removeBg': 'Remove BG',
+      'removeBgDone': 'Background removed ✨ Change it from “Background”',
+      'removeBgNoSubject': 'No clear person or object found in the photo',
+      'removeBgUnsupported': 'Background removal is not supported on this device',
+      'removeBgPreparing': 'Preparing the cutout tool for first use… try again in a minute',
+      'removingBg': 'Removing background…',
+      'addPhoto': 'Photo',
       'sigOrnate': 'Ornate',
       'sigLaurel': 'Laurel',
       'sigRoyal': 'Royal',

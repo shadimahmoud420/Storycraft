@@ -1,0 +1,21 @@
+name: subject_cutout
+description: On-device background removal (Apple Vision on iOS, ML Kit on Android).
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.storycraft.subject_cutout
+        pluginClass: SubjectCutoutPlugin
+      ios:
+        pluginClass: SubjectCutoutPlugin

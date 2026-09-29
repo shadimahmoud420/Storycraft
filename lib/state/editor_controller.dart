@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,10 @@ import '../data/formats.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import '../services/background_remover.dart';
 import '../services/image_processing.dart';
 
-enum ImageOperation { natural, enhance }
+enum ImageOperation { natural, enhance, cutout }
 
 class _Snapshot {
   _Snapshot(this.format, this.background, this.layers, this.selectedId);
@@ -174,6 +176,7 @@ class EditorController extends ChangeNotifier {
       final Uint8List result = switch (op) {
         ImageOperation.natural => await ImageProcessing.naturalColors(bytes),
         ImageOperation.enhance => await ImageProcessing.enhance(bytes),
+        ImageOperation.cutout => throw ArgumentError.value(op),
       };
       checkpoint();
       _background = _background.withImage(result);
@@ -181,6 +184,56 @@ class EditorController extends ChangeNotifier {
       return true;
     } catch (_) {
       return false;
+    } finally {
+      _busy = null;
+      notifyListeners();
+    }
+  }
+
+  // --- Background removal ---------------------------------------------------
+
+  /// Cuts the subject out of the photo background: the subject becomes an
+  /// image layer and the background turns into [newBackground], ready to
+  /// change. Throws [CutoutException]; one undo step.
+  Future<void> cutoutBackground(StoryBackground newBackground) async {
+    final bytes = _background.imageBytes;
+    if (bytes == null || isBusy) return;
+    final cut = await _whileBusy(() => BackgroundRemover.cutout(bytes));
+    checkpoint();
+    _background = newBackground;
+    // As large as fits in the safe area, standing on the lower part.
+    final h = canvasSize.height;
+    final width = math.min(330.0, h * 0.72 / cut.aspect);
+    final layer = StoryLayer(
+      id: _newId(),
+      kind: LayerKind.image,
+      imageBytes: cut.png,
+      size: width,
+      position: Offset(180, h * 0.84 - width * cut.aspect / 2),
+    );
+    _layers.insert(0, layer); // behind existing text
+    _selectedId = layer.id;
+    _changed();
+  }
+
+  /// Removes the background of an image layer in place (e.g. an added
+  /// photo). Throws [CutoutException]; one undo step.
+  Future<void> cutoutLayer(String id) async {
+    final layer = _layers.where((l) => l.id == id).firstOrNull;
+    final bytes = layer?.imageBytes;
+    if (layer == null || bytes == null || isBusy) return;
+    final cut = await _whileBusy(() => BackgroundRemover.cutout(bytes));
+    updateLayer(id, (l) {
+      l.imageBytes = cut.png;
+      l.size *= cut.widthFraction;
+    });
+  }
+
+  Future<T> _whileBusy<T>(Future<T> Function() task) async {
+    _busy = ImageOperation.cutout;
+    notifyListeners();
+    try {
+      return await task();
     } finally {
       _busy = null;
       notifyListeners();
@@ -218,11 +271,12 @@ class EditorController extends ChangeNotifier {
         color: suggestTextColor(),
       ));
 
-  StoryLayer addImage(Uint8List bytes) => addLayer(StoryLayer(
+  StoryLayer addImage(Uint8List bytes, {double size = 120}) =>
+      addLayer(StoryLayer(
         id: _newId(),
         kind: LayerKind.image,
         imageBytes: bytes,
-        size: 120,
+        size: size,
       ));
 
   /// Cartoon illustration from assets/stickers. Wide art (garlands,

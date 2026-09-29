@@ -11,8 +11,10 @@ import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/fonts.dart';
 import '../data/formats.dart';
+import '../data/palettes.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import '../services/background_remover.dart';
 import '../services/brand_kit.dart';
 import '../services/draft_store.dart';
 import '../services/image_processing.dart';
@@ -575,6 +577,51 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Adds a gallery photo as a movable layer (e.g. to cut it out and put
+  /// it on another photo or color).
+  Future<void> _addPhotoLayer() async {
+    final s = S.of(context);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2000,
+      maxHeight: 2000,
+      imageQuality: 95,
+    );
+    if (picked == null) return;
+    try {
+      final bytes =
+          await ImageProcessing.prepareImport(await picked.readAsBytes());
+      _controller.addImage(bytes, size: 220);
+    } catch (_) {
+      if (mounted) _toast(s.processFailed);
+    }
+  }
+
+  /// Background removal for the photo background, or for [layerId].
+  Future<void> _removeBackground({String? layerId}) async {
+    final s = S.of(context);
+    try {
+      if (layerId != null) {
+        await _controller.cutoutLayer(layerId);
+      } else {
+        await _controller.cutoutBackground(
+          StoryBackground.gradient(Palettes.gradients[1]),
+        );
+      }
+      if (mounted && layerId == null) _toast(s.removeBgDone);
+    } on CutoutException catch (e) {
+      if (!mounted) return;
+      _toast(switch (e.error) {
+        CutoutError.unsupported => s.removeBgUnsupported,
+        CutoutError.preparing => s.removeBgPreparing,
+        CutoutError.noSubject => s.removeBgNoSubject,
+        CutoutError.failed => s.processFailed,
+      });
+    } catch (_) {
+      if (mounted) _toast(s.processFailed);
+    }
+  }
+
   Future<void> _runImageOp(ImageOperation op) async {
     final s = S.of(context);
     final ok = await _controller.runImageOperation(op);
@@ -712,7 +759,9 @@ class _EditorScreenState extends State<EditorScreen> {
                               ),
                             if (c.isBusy)
                               Positioned.fill(
-                                  child: _BusyOverlay(s.processing)),
+                                  child: _BusyOverlay(c.busy == ImageOperation.cutout
+                                      ? s.removingBg
+                                      : s.processing)),
                           ],
                         ),
                       ),
@@ -724,6 +773,10 @@ class _EditorScreenState extends State<EditorScreen> {
                         editLabel: c.selected!.isText ? s.text : s.style,
                         onEdit: () => _editLayer(c.selected!),
                         onTransform: () => _editTransform(c.selected!),
+                        onRemoveBg: c.selected!.kind == LayerKind.image &&
+                                !c.isBusy
+                            ? () => _removeBackground(layerId: c.selectedId)
+                            : null,
                         onDuplicate: () => c.duplicateLayer(c.selectedId!),
                         onDelete: () => c.removeLayer(c.selectedId!),
                       ),
@@ -755,6 +808,11 @@ class _EditorScreenState extends State<EditorScreen> {
                           onTap: _openSignatures,
                         ),
                         _Tool(
+                          icon: Icons.add_photo_alternate_rounded,
+                          label: s.addPhoto,
+                          onTap: c.isBusy ? null : _addPhotoLayer,
+                        ),
+                        _Tool(
                           icon: Icons.storefront_rounded,
                           label: s.brandKit,
                           onTap: _openBrandKit,
@@ -781,6 +839,13 @@ class _EditorScreenState extends State<EditorScreen> {
                             onTap: c.isBusy
                                 ? null
                                 : () => _runImageOp(ImageOperation.enhance),
+                          ),
+                          _Tool(
+                            icon: Icons.content_cut_rounded,
+                            label: s.removeBg,
+                            highlight: true,
+                            busy: c.busy == ImageOperation.cutout,
+                            onTap: c.isBusy ? null : _removeBackground,
                           ),
                           _Tool(
                             icon: Icons.filter_vintage_rounded,
@@ -995,6 +1060,7 @@ class _SelectionBar extends StatelessWidget {
     required this.editLabel,
     required this.onEdit,
     required this.onTransform,
+    this.onRemoveBg,
     required this.onDuplicate,
     required this.onDelete,
   });
@@ -1003,6 +1069,7 @@ class _SelectionBar extends StatelessWidget {
   final String editLabel;
   final VoidCallback onEdit;
   final VoidCallback onTransform;
+  final VoidCallback? onRemoveBg;
   final VoidCallback onDuplicate;
   final VoidCallback onDelete;
 
@@ -1024,6 +1091,12 @@ class _SelectionBar extends StatelessWidget {
               avatar: const Icon(Icons.edit_rounded, size: 18),
               label: Text(editLabel),
               onPressed: onEdit,
+            ),
+          if (onRemoveBg != null)
+            ActionChip(
+              avatar: const Icon(Icons.content_cut_rounded, size: 18),
+              label: Text(s.removeBg),
+              onPressed: onRemoveBg,
             ),
           ActionChip(
             avatar: const Icon(Icons.rotate_right_rounded, size: 18),
