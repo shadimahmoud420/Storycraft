@@ -254,6 +254,32 @@ class _CanvasContentState extends State<_CanvasContent> {
                     ),
                   ),
                 ),
+              // The selected layer keeps its place in the stack, but an
+              // invisible copy on top receives the touches, so a layer
+              // under a photo can still be moved, and its frame stays
+              // visible.
+              if (_c.selected case final sel? when !sel.hidden)
+                PositionedLayer(
+                  key: const ValueKey('selection-handle'),
+                  layer: sel,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => widget.onEditLayer(sel),
+                    onScaleStart: (d) => _layerStart(sel, d),
+                    onScaleUpdate: (d) => _layerUpdate(sel, d),
+                    onScaleEnd: _gestureEnd,
+                    child: Container(
+                      foregroundDecoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 1.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Opacity(
+                        opacity: 0,
+                        child: StoryLayerVisual(layer: sel, selected: true),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

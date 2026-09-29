@@ -68,6 +68,29 @@ class S {
   String get removeBgPreparing => _t('removeBgPreparing');
   String get removingBg => _t('removingBg');
   String get addPhoto => _t('addPhoto');
+  String get cutAuto => _t('cutAuto');
+  String get cutAutoHint => _t('cutAutoHint');
+  String get cutColor => _t('cutColor');
+  String get cutColorHint => _t('cutColorHint');
+  String get cutStrength => _t('cutStrength');
+  String get cutEdgesOnly => _t('cutEdgesOnly');
+  String get cutEdgesOnlyHint => _t('cutEdgesOnlyHint');
+  String get inkColor => _t('inkColor');
+  String get white => _t('white');
+  String get black => _t('black');
+  String get apply => _t('apply');
+  String get tryColorMode => _t('tryColorMode');
+  String get layers => _t('layers');
+  String get opacity => _t('opacity');
+  String get toFront => _t('toFront');
+  String get forward => _t('forward');
+  String get backward => _t('backward');
+  String get toBack => _t('toBack');
+  String get layerEmoji => _t('layerEmoji');
+  String get layerShape => _t('layerShape');
+  String get layerArt => _t('layerArt');
+  String get noLayers => _t('noLayers');
+  String get dragToReorder => _t('dragToReorder');
 
   String get templates => _t('templates');
   String get templatesHint => _t('templatesHint');
@@ -242,6 +265,29 @@ class S {
       'removeBgPreparing': 'يتم تجهيز أداة التفريغ لأول مرة… حاول بعد دقيقة',
       'removingBg': 'جارٍ تفريغ الصورة…',
       'addPhoto': 'صورة',
+      'cutAuto': 'تلقائي',
+      'cutAutoHint': 'أشخاص وعناصر',
+      'cutColor': 'لون الخلفية',
+      'cutColorHint': 'توقيع، شعار، رسم',
+      'cutStrength': 'قوة الإزالة',
+      'cutEdgesOnly': 'من الأطراف فقط',
+      'cutEdgesOnlyHint': 'يُبقي الأجزاء الداخلية التي بلون الخلفية',
+      'inkColor': 'لون الرسم',
+      'white': 'أبيض',
+      'black': 'أسود',
+      'apply': 'تطبيق',
+      'tryColorMode': 'للتوقيع والرسم جرّب «لون الخلفية»',
+      'layers': 'الطبقات',
+      'opacity': 'الشفافية',
+      'toFront': 'للأعلى',
+      'forward': 'تقديم',
+      'backward': 'تأخير',
+      'toBack': 'للأسفل',
+      'layerEmoji': 'إيموجي',
+      'layerShape': 'شكل',
+      'layerArt': 'ملصق',
+      'noLayers': 'لا توجد طبقات بعد — أضف نصًا أو صورة',
+      'dragToReorder': 'اسحب المقبض لتغيير الترتيب',
       'sigOrnate': 'مزخرف',
       'sigLaurel': 'إكليل غار',
       'sigRoyal': 'ملكي',
@@ -410,6 +456,29 @@ class S {
       'removeBgPreparing': 'Preparing the cutout tool for first use… try again in a minute',
       'removingBg': 'Removing background…',
       'addPhoto': 'Photo',
+      'cutAuto': 'Auto',
+      'cutAutoHint': 'People & objects',
+      'cutColor': 'Background color',
+      'cutColorHint': 'Signature, logo, drawing',
+      'cutStrength': 'Strength',
+      'cutEdgesOnly': 'From the edges only',
+      'cutEdgesOnlyHint': 'Keeps inner parts that share the background color',
+      'inkColor': 'Drawing color',
+      'white': 'White',
+      'black': 'Black',
+      'apply': 'Apply',
+      'tryColorMode': 'For signatures and drawings, try “Background color”',
+      'layers': 'Layers',
+      'opacity': 'Opacity',
+      'toFront': 'To front',
+      'forward': 'Forward',
+      'backward': 'Backward',
+      'toBack': 'To back',
+      'layerEmoji': 'Emoji',
+      'layerShape': 'Shape',
+      'layerArt': 'Sticker',
+      'noLayers': 'No layers yet — add text or a photo',
+      'dragToReorder': 'Drag the handle to reorder',
       'sigOrnate': 'Ornate',
       'sigLaurel': 'Laurel',
       'sigRoyal': 'Royal',

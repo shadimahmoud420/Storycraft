@@ -192,13 +192,27 @@ class EditorController extends ChangeNotifier {
 
   // --- Background removal ---------------------------------------------------
 
-  /// Cuts the subject out of the photo background: the subject becomes an
-  /// image layer and the background turns into [newBackground], ready to
-  /// change. Throws [CutoutException]; one undo step.
+  /// Cuts the subject out of the photo background automatically (people,
+  /// pets, objects). Throws [CutoutException]; one undo step.
   Future<void> cutoutBackground(StoryBackground newBackground) async {
     final bytes = _background.imageBytes;
     if (bytes == null || isBusy) return;
     final cut = await _whileBusy(() => BackgroundRemover.cutout(bytes));
+    applyBackgroundCutout(cut, newBackground);
+  }
+
+  /// Removes the background of an image layer automatically.
+  /// Throws [CutoutException]; one undo step.
+  Future<void> cutoutLayer(String id) async {
+    final bytes = _layers.where((l) => l.id == id).firstOrNull?.imageBytes;
+    if (bytes == null || isBusy) return;
+    final cut = await _whileBusy(() => BackgroundRemover.cutout(bytes));
+    applyLayerCutout(id, cut);
+  }
+
+  /// The photo background's cut-out becomes an image layer (behind the
+  /// other layers) and the background turns into [newBackground].
+  void applyBackgroundCutout(Cutout cut, StoryBackground newBackground) {
     checkpoint();
     _background = newBackground;
     // As large as fits in the safe area, standing on the lower part.
@@ -211,23 +225,16 @@ class EditorController extends ChangeNotifier {
       size: width,
       position: Offset(180, h * 0.84 - width * cut.aspect / 2),
     );
-    _layers.insert(0, layer); // behind existing text
+    _layers.insert(0, layer);
     _selectedId = layer.id;
     _changed();
   }
 
-  /// Removes the background of an image layer in place (e.g. an added
-  /// photo). Throws [CutoutException]; one undo step.
-  Future<void> cutoutLayer(String id) async {
-    final layer = _layers.where((l) => l.id == id).firstOrNull;
-    final bytes = layer?.imageBytes;
-    if (layer == null || bytes == null || isBusy) return;
-    final cut = await _whileBusy(() => BackgroundRemover.cutout(bytes));
-    updateLayer(id, (l) {
-      l.imageBytes = cut.png;
-      l.size *= cut.widthFraction;
-    });
-  }
+  /// Replaces an image layer's picture with its cut-out, same scale.
+  void applyLayerCutout(String id, Cutout cut) => updateLayer(id, (l) {
+        l.imageBytes = cut.png;
+        l.size *= cut.widthFraction;
+      });
 
   Future<T> _whileBusy<T>(Future<T> Function() task) async {
     _busy = ImageOperation.cutout;
@@ -346,12 +353,38 @@ class EditorController extends ChangeNotifier {
   void select(String? id) {
     if (_selectedId == id) return;
     _selectedId = id;
-    if (id != null) {
-      // Bring the selected layer to the front.
-      final i = _layers.indexWhere((l) => l.id == id);
-      if (i >= 0) _layers.add(_layers.removeAt(i));
-    }
+    // Selecting keeps the stacking order; use the layer tools to reorder.
     notifyListeners();
+  }
+
+  // --- Stacking order (index 0 = bottom, just above the background) --------
+
+  int indexOf(String id) => _layers.indexWhere((l) => l.id == id);
+
+  /// Moves a layer to [index] in the stack (clamped). One undo step.
+  void moveLayer(String id, int index) {
+    final from = indexOf(id);
+    if (from < 0) return;
+    final to = index.clamp(0, _layers.length - 1);
+    if (to == from) return;
+    checkpoint();
+    _layers.insert(to, _layers.removeAt(from));
+    _changed();
+  }
+
+  void bringForward(String id) => moveLayer(id, indexOf(id) + 1);
+  void sendBackward(String id) => moveLayer(id, indexOf(id) - 1);
+  void bringToFront(String id) => moveLayer(id, _layers.length - 1);
+  void sendToBack(String id) => moveLayer(id, 0);
+
+  /// Shows or hides a layer; a hidden layer is deselected.
+  void toggleHidden(String id) {
+    final layer = _layers.where((l) => l.id == id).firstOrNull;
+    if (layer == null) return;
+    checkpoint();
+    layer.hidden = !layer.hidden;
+    if (layer.hidden && _selectedId == id) _selectedId = null;
+    _changed();
   }
 
   /// Applies [update] to a layer and repaints. Pass `record: false` for

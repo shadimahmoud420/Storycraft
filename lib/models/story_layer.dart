@@ -53,6 +53,8 @@ class StoryLayer {
     this.position = const Offset(180, 320),
     this.scale = 1,
     this.rotation = 0,
+    this.opacity = 1,
+    this.hidden = false,
   });
 
   final String id;
@@ -90,6 +92,12 @@ class StoryLayer {
   double scale;
   double rotation;
 
+  /// Layer transparency, 0…1 (e.g. a photo blended over another).
+  double opacity;
+
+  /// Hidden layers stay in the list but are not drawn or exported.
+  bool hidden;
+
   bool get isText => kind == LayerKind.text;
 
   StoryLayer copyWith({required String id, Offset? position}) => StoryLayer(
@@ -116,6 +124,8 @@ class StoryLayer {
         position: position ?? this.position,
         scale: scale,
         rotation: rotation,
+        opacity: opacity,
+        hidden: hidden,
       );
 
   StoryLayer clone() => copyWith(id: id);
@@ -215,6 +225,8 @@ class StoryLayer {
         'y': position.dy,
         'scale': scale,
         'rotation': rotation,
+        'opacity': opacity,
+        'hidden': hidden,
       };
 
   factory StoryLayer.fromJson(Map<String, dynamic> j) => StoryLayer(
@@ -246,6 +258,8 @@ class StoryLayer {
         ),
         scale: (j['scale'] as num? ?? 1).toDouble(),
         rotation: (j['rotation'] as num? ?? 0).toDouble(),
+        opacity: (j['opacity'] as num? ?? 1).toDouble(),
+        hidden: j['hidden'] as bool? ?? false,
       );
 }
 

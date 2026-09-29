@@ -25,11 +25,13 @@ import '../widgets/background_sheet.dart';
 import '../widgets/color_picker.dart';
 import '../widgets/signature_view.dart';
 import '../widgets/filter_sheet.dart';
+import '../widgets/layers_sheet.dart';
 import '../widgets/quotes_sheet.dart';
 import '../widgets/sticker_sheet.dart';
 import '../widgets/story_canvas.dart';
 import '../widgets/text_editor_sheet.dart';
 import 'brand_kit_screen.dart';
+import 'remove_bg_screen.dart';
 import 'signature_screen.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -597,30 +599,34 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  /// Background removal for the photo background, or for [layerId].
+  /// Background removal for the photo background, or for [layerId]:
+  /// opens the studio (auto / background color) and applies the result.
   Future<void> _removeBackground({String? layerId}) async {
     final s = S.of(context);
-    try {
-      if (layerId != null) {
-        await _controller.cutoutLayer(layerId);
-      } else {
-        await _controller.cutoutBackground(
-          StoryBackground.gradient(Palettes.gradients[1]),
-        );
-      }
-      if (mounted && layerId == null) _toast(s.removeBgDone);
-    } on CutoutException catch (e) {
-      if (!mounted) return;
-      _toast(switch (e.error) {
-        CutoutError.unsupported => s.removeBgUnsupported,
-        CutoutError.preparing => s.removeBgPreparing,
-        CutoutError.noSubject => s.removeBgNoSubject,
-        CutoutError.failed => s.processFailed,
-      });
-    } catch (_) {
-      if (mounted) _toast(s.processFailed);
+    final bytes = layerId == null
+        ? _controller.background.imageBytes
+        : _controller.layers
+            .where((l) => l.id == layerId)
+            .firstOrNull
+            ?.imageBytes;
+    if (bytes == null) return;
+    final cut = await Navigator.push<Cutout>(
+      context,
+      MaterialPageRoute(builder: (_) => RemoveBgScreen(imageBytes: bytes)),
+    );
+    if (cut == null || !mounted) return;
+    if (layerId != null) {
+      _controller.applyLayerCutout(layerId, cut);
+    } else {
+      _controller.applyBackgroundCutout(
+        cut,
+        StoryBackground.gradient(Palettes.gradients[1]),
+      );
+      _toast(s.removeBgDone);
     }
   }
+
+  void _openLayers() => showLayersSheet(context, _controller);
 
   Future<void> _runImageOp(ImageOperation op) async {
     final s = S.of(context);
@@ -806,6 +812,11 @@ class _EditorScreenState extends State<EditorScreen> {
                           icon: Icons.draw_rounded,
                           label: s.signature,
                           onTap: _openSignatures,
+                        ),
+                        _Tool(
+                          icon: Icons.layers_rounded,
+                          label: s.layers,
+                          onTap: _openLayers,
                         ),
                         _Tool(
                           icon: Icons.add_photo_alternate_rounded,

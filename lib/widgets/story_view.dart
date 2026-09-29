@@ -247,6 +247,12 @@ class PositionedLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (layer.hidden) {
+      return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
+    }
+    final content = layer.opacity < 1
+        ? Opacity(opacity: layer.opacity.clamp(0.0, 1.0), child: child)
+        : child;
     return Positioned(
       left: layer.position.dx,
       top: layer.position.dy,
@@ -254,7 +260,7 @@ class PositionedLayer extends StatelessWidget {
         translation: const Offset(-0.5, -0.5),
         child: Transform.rotate(
           angle: layer.rotation,
-          child: Transform.scale(scale: layer.scale, child: child),
+          child: Transform.scale(scale: layer.scale, child: content),
         ),
       ),
     );

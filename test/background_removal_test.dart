@@ -26,6 +26,8 @@ void main() {
 
   tearDown(() => messenger.setMockMethodCallHandler(_channel, null));
 
+  colorKeyTests();
+
   test('trimTransparent crops to the subject with a small margin', () {
     final cut = trimTransparent(_subjectPng())!;
     expect(cut.width, inInclusiveRange(20, 24));
@@ -83,5 +85,50 @@ void main() {
       throwsA(isA<CutoutException>()
           .having((e) => e.error, 'error', CutoutError.unsupported)),
     );
+  });
+}
+
+/// White canvas with a dark 4px ring (outer 60, inner 52) centered.
+Uint8List _ringPng() {
+  final im = img.Image(width: 120, height: 120)..clear(img.ColorRgb8(255, 255, 255));
+  img.fillCircle(im, x: 60, y: 60, radius: 30, color: img.ColorRgb8(10, 20, 80));
+  img.fillCircle(im, x: 60, y: 60, radius: 26, color: img.ColorRgb8(255, 255, 255));
+  return img.encodeJpg(im, quality: 95);
+}
+
+int _alphaAtCenter(Cutout c) {
+  final im = img.decodePng(c.png)!;
+  return im.getPixel(im.width ~/ 2, im.height ~/ 2).a.toInt();
+}
+
+void colorKeyTests() {
+  test('color key removes white, also inside loops, keeps the ink', () {
+    final cut = colorKey(_ringPng(), const ColorKeyOptions())!;
+    expect(cut.width, inInclusiveRange(58, 70)); // trimmed to the ring
+    expect(_alphaAtCenter(cut), 0); // inside the loop is cleared
+    final im = img.decodePng(cut.png)!;
+    final ink = im.getPixel(im.width ~/ 2, 2); // top of the ring
+    expect(ink.a.toInt(), greaterThan(200));
+    expect(ink.b.toInt(), greaterThan(ink.r.toInt())); // still navy
+  });
+
+  test('edges-only keeps enclosed background-colored areas', () {
+    final cut =
+        colorKey(_ringPng(), const ColorKeyOptions(edgesOnly: true))!;
+    expect(_alphaAtCenter(cut), 255);
+  });
+
+  test('recolor paints the drawing in one color', () {
+    final cut = colorKey(
+        _ringPng(), const ColorKeyOptions(recolor: 0xFFD4AF37))!;
+    final im = img.decodePng(cut.png)!;
+    final p = im.getPixel(im.width ~/ 2, 2);
+    expect([p.r.toInt(), p.g.toInt(), p.b.toInt()], [0xD4, 0xAF, 0x37]);
+  });
+
+  test('a blank page has nothing to keep', () {
+    final blank = img.encodePng(
+        img.Image(width: 80, height: 80)..clear(img.ColorRgb8(250, 250, 250)));
+    expect(colorKey(blank, const ColorKeyOptions()), isNull);
   });
 }
