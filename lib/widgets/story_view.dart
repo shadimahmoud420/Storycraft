@@ -130,8 +130,10 @@ class StoryLayerVisual extends StatelessWidget {
       case LayerKind.text:
         final isRtl = StoryFonts.hasArabic(layer.text);
         Widget box = Container(
-          constraints:
-              const BoxConstraints(maxWidth: AppConfig.canvasWidth - 24),
+          constraints: BoxConstraints(
+              maxWidth: layer.wrapWidth > 0
+                  ? layer.wrapWidth
+                  : AppConfig.canvasWidth - 24),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: layer.highlightColor,

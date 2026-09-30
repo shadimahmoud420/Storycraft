@@ -67,6 +67,7 @@ class StoryLayer {
     this.ornament = OrnamentKind.stars,
     this.height = 0,
     this.seed = 0,
+    this.wrapWidth = 0,
   });
 
   final String id;
@@ -124,6 +125,9 @@ class StoryLayer {
   double height;
   int seed;
 
+  /// Text layers: line-wrap width in canvas units (0 = nearly full width).
+  double wrapWidth;
+
   bool get isText => kind == LayerKind.text;
 
   StoryLayer copyWith({required String id, Offset? position}) => StoryLayer(
@@ -157,6 +161,7 @@ class StoryLayer {
         ornament: ornament,
         height: height,
         seed: seed,
+        wrapWidth: wrapWidth,
       );
 
   StoryLayer clone() => copyWith(id: id);
@@ -263,6 +268,7 @@ class StoryLayer {
         'ornament': ornament.name,
         'height': height,
         'seed': seed,
+        if (wrapWidth > 0) 'wrapWidth': wrapWidth,
       };
 
   factory StoryLayer.fromJson(Map<String, dynamic> j) => StoryLayer(
@@ -301,6 +307,7 @@ class StoryLayer {
         ornament: _enum(OrnamentKind.values, j['ornament'], OrnamentKind.stars),
         height: (j['height'] as num? ?? 0).toDouble(),
         seed: j['seed'] as int? ?? 0,
+        wrapWidth: (j['wrapWidth'] as num? ?? 0).toDouble(),
       );
 }
 

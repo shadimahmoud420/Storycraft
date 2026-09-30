@@ -117,6 +117,27 @@ void main() {
       }
     });
 
+    test('every text fits every layout above the tag and watermark', () {
+      final misfits = <String>[];
+      // A Thursday (has a tag) so the tighter limit applies.
+      final day = DateTime(2026, 10, 1);
+      for (final cat in DailyCategory.values) {
+        final n = DailyTexts.of(cat).length;
+        for (var shift = 0; shift < n; shift++) {
+          for (var variant = 0; variant < 5; variant++) {
+            final s = DailyStoryGenerator.build(day,
+                category: cat, textShift: shift, variant: variant,
+                now: DateTime(2026, 1, 1, 9));
+            if (!s.fits) {
+              misfits.add('${cat.name}#$shift v$variant '
+                  '${s.contentBottom.round()}>${s.limit.round()}');
+            }
+          }
+        }
+      }
+      expect(misfits, isEmpty);
+    });
+
     test('neighbouring days and variants look different', () {
       String signature(DailyStory s) =>
           '${s.background.gradientColors}|${s.layers.map((l) => '${l.kind.name}${l.ornament.name}').join()}';

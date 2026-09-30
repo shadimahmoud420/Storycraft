@@ -230,6 +230,7 @@ class _DailyScreenState extends State<DailyScreen> {
                         (s.catDhikr, DailyCategory.dhikr),
                         (s.catAyah, DailyCategory.ayah),
                         (s.catWisdom, DailyCategory.wisdom),
+                        (s.catSaying, DailyCategory.saying),
                         (s.catQuote, DailyCategory.quote),
                       ])
                         Padding(

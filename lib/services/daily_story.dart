@@ -17,7 +17,15 @@ class DailyStory {
     required this.label,
     required this.background,
     required this.layers,
+    this.contentBottom = 0,
+    this.limit = 0,
   });
+
+  /// Lowest point of the main content and the line it must stay above
+  /// (the occasion tag / watermark zone).
+  final double contentBottom;
+  final double limit;
+  bool get fits => contentBottom <= limit;
 
   final DateTime date;
   final DayInfo info;
@@ -70,13 +78,14 @@ class DailyStoryGenerator {
 
   static const _titleFonts = ['Aref Ruqaa', 'Lemonada', 'Reem Kufi', 'Rakkas', 'El Messiri'];
   static const _sacredFonts = ['Amiri', 'Aref Ruqaa', 'El Messiri', 'Scheherazade New'];
-  static const _plainFonts = ['El Messiri', 'Cairo', 'Reem Kufi', 'Lemonada', 'Amiri'];
+  static const _plainFonts = ['El Messiri', 'Cairo', 'Amiri', 'Scheherazade New'];
 
   static const labels = {
     DailyCategory.dua: 'دعاء اليوم',
     DailyCategory.dhikr: 'ذكر اليوم',
     DailyCategory.ayah: 'آية اليوم',
     DailyCategory.wisdom: 'حكمة اليوم',
+    DailyCategory.saying: 'من أقوال الحكماء',
     DailyCategory.quote: 'اقتباس اليوم',
   };
 
@@ -86,6 +95,7 @@ class DailyStoryGenerator {
     DailyCategory.dhikr,
     DailyCategory.quote,
     DailyCategory.ayah,
+    DailyCategory.saying,
   ];
 
   /// Days since 2024-01-01 (stable across time zones and DST).
@@ -111,7 +121,9 @@ class DailyStoryGenerator {
   }
 
   static bool _sacred(String label) =>
-      !label.contains('حكمة') && !label.contains('اقتباس');
+      !label.contains('حكمة') &&
+      !label.contains('اقتباس') &&
+      !label.contains('أقوال');
 
   static DailyStory build(
     DateTime date, {
@@ -156,6 +168,7 @@ class DailyStoryGenerator {
       }
       if (b.bottom <= limit || scale < 0.5) break;
     }
+    final contentBottom = b.bottom;
     if (info.tag != null) b.tag(info.tag!);
     if (watermark) b.watermark();
 
@@ -166,6 +179,8 @@ class DailyStoryGenerator {
       label: label,
       background: StoryBackground.gradient(pal.bg),
       layers: b.layers,
+      contentBottom: contentBottom,
+      limit: limit,
     );
   }
 }
@@ -206,6 +221,7 @@ class _Builder {
     String? template,
     double lineHeight = 1.35,
     bool scaled = true,
+    double wrap = 0,
   }) {
     // Live-date layers are measured (and saved) with the story's date.
     if (template != null) value = DateText.resolve(template, date);
@@ -216,12 +232,13 @@ class _Builder {
       ..fontSize = scaled ? size * scale : size
       ..color = color ?? p.txt
       ..fill = fill
-      ..lineHeight = lineHeight;
+      ..lineHeight = lineHeight
+      ..wrapWidth = wrap;
     final tp = TextPainter(
       text: TextSpan(text: value, style: l.textStyle()),
       textDirection: TextDirection.rtl,
       textAlign: TextAlign.center,
-    )..layout(maxWidth: AppConfig.canvasWidth - 48);
+    )..layout(maxWidth: (wrap > 0 ? wrap : AppConfig.canvasWidth - 24) - 24);
     final height = tp.height + 12;
     tp.dispose();
     l.position = Offset(cx, top + height / 2);
@@ -241,6 +258,8 @@ class _Builder {
       ..locked = locked
       ..seed = seed);
   }
+
+  static const _decorative = {'Aref Ruqaa', 'Lemonada', 'Reem Kufi', 'Rakkas'};
 
   TextFill get accentFill =>
       p.dark && p.acc.computeLuminance() > 0.35 && p.acc != Colors.white
@@ -264,14 +283,27 @@ class _Builder {
 
   double body(DailyText t, String label, double top,
       {Color? color, Color? sourceColor, Color? labelColor,
-      TextFill fill = TextFill.solid, double size = 25}) {
+      TextFill fill = TextFill.solid, double size = 25, double wrap = 0}) {
     var y = text(label, top: top, font: 'El Messiri', size: 16,
-            color: labelColor ?? p.acc) + 8;
-    y = text(t.text, top: y, font: bodyFont, size: size, color: color, fill: fill,
-        lineHeight: 1.55);
+            color: labelColor ?? p.acc, wrap: wrap) + 8;
+    // Long texts use a calm, very legible face and a smaller size.
+    final long = t.text.length > 45;
+    final font = long && _decorative.contains(bodyFont) ? 'Amiri' : bodyFont;
+    final length = t.text.length;
+    final fitted = length > 150
+        ? size * 0.72
+        : length > 90
+            ? size * 0.82
+            : size;
+    y = text(t.text, top: y, font: font, size: fitted, color: color, fill: fill,
+        lineHeight: 1.6, wrap: wrap);
     if (t.source != null) {
-      y = text('[ ${t.source} ]', top: y + 2, font: 'Amiri', size: 14,
-          color: sourceColor ?? p.sub);
+      // Authors are shown by name, references as "[ source ]".
+      final src = t.source!.startsWith('—')
+          ? t.source!.substring(1).trim()
+          : '[ ${t.source} ]';
+      y = text(src, top: y + 2, font: 'Amiri', size: 15,
+          color: sourceColor ?? p.sub, wrap: wrap);
     }
     return y;
   }
@@ -288,7 +320,7 @@ class _Builder {
         template: info.title == null ? '{greg}' : '{weekday} · {greg}');
     y = text('', top: y - 4, font: 'El Messiri', size: 16, color: p.sub, template: '{hijri}');
     ornament(OrnamentKind.divider, Offset(cx, y + 14), 150, height: 12);
-    body(t, label, y + 30, size: 25);
+    body(t, label, y + 30, size: 25, wrap: w - 64);
   }
 
   void pill(DayInfo info, String headline, DailyText t, String label, DateTime now) {
@@ -342,7 +374,8 @@ class _Builder {
     final onCard = p.acc.computeLuminance() > 0.55 ? p.bg[1] : p.acc;
     var yy = text('”', top: cardTop + 4, font: 'Amiri', size: 64, color: onCard, lineHeight: 1);
     yy = body(t, label, yy - 18, color: const Color(0xFF28283A),
-        sourceColor: const Color(0xFF777786), labelColor: onCard, size: 24);
+        sourceColor: const Color(0xFF777786), labelColor: onCard, size: 24,
+        wrap: w - 72);
     final cardHeight = yy - cardTop + 18;
     final cardLayer = _layer(LayerKind.ornament)
       ..ornament = OrnamentKind.card
