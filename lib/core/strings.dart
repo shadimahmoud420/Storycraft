@@ -80,6 +80,8 @@ class S {
   String get catWisdom => _t('catWisdom');
   String get catQuote => _t('catQuote');
   String get catSaying => _t('catSaying');
+  String get quotesDua => _t('quotesDua');
+  String get quotesAyah => _t('quotesAyah');
   String get today => _t('today');
   String get backToToday => _t('backToToday');
   String get settings => _t('settings');
@@ -306,6 +308,8 @@ class S {
       'catWisdom': 'حكمة',
       'catQuote': 'اقتباس',
       'catSaying': 'أقوال الحكماء',
+      'quotesDua': 'أدعية',
+      'quotesAyah': 'آيات',
       'today': 'اليوم',
       'backToToday': 'العودة لليوم',
       'settings': 'الإعدادات',
@@ -526,6 +530,8 @@ class S {
       'catWisdom': 'Wisdom',
       'catQuote': 'Quote',
       'catSaying': 'Sayings',
+      'quotesDua': 'Prayers',
+      'quotesAyah': 'Verses',
       'today': 'Today',
       'backToToday': 'Back to today',
       'settings': 'Settings',

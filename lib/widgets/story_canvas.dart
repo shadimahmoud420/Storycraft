@@ -106,6 +106,80 @@ class _CanvasContentState extends State<_CanvasContent> {
   /// Snap to multiples of 45° within ±4° so straight text is easy.
   static const _rotationSnapDeg = 4.0;
 
+  // App mark placement: the first candidate spot not covered by a layer.
+  final _visualKeys = <String, GlobalKey>{};
+  Offset? _markSpot;
+  static const _markSize = Size(106, 28);
+
+  GlobalKey _keyFor(String id) => _visualKeys.putIfAbsent(id, GlobalKey.new);
+
+  /// Candidate spots, best first: above Instagram's reply bar, then the
+  /// bottom corners, then under the profile header at the top.
+  List<Offset> _markCandidates() {
+    final w = _c.canvasSize.width, h = _c.canvasSize.height;
+    if (h > 600) {
+      return [
+        Offset(w / 2, h * 0.84), Offset(w * 0.18, h * 0.84),
+        Offset(w * 0.82, h * 0.84), Offset(w / 2, h * 0.77),
+        Offset(w * 0.18, h * 0.77), Offset(w * 0.82, h * 0.77),
+        Offset(w / 2, h * 0.15), Offset(w * 0.18, h * 0.15),
+        Offset(w * 0.82, h * 0.15), Offset(w / 2, h * 0.70),
+      ];
+    }
+    return [
+      Offset(w / 2, h - 22), Offset(w * 0.25, h - 22),
+      Offset(w * 0.75, h - 22), Offset(w / 2, 22),
+      Offset(w * 0.25, 22), Offset(w * 0.75, 22),
+    ];
+  }
+
+  /// Measures every visible layer and moves the mark to the emptiest spot.
+  void _placeMark() {
+    if (!mounted || _dragging) return;
+    final root = widget.boundaryKey.currentContext?.findRenderObject();
+    if (root is! RenderBox) return;
+    final rects = <Rect>[];
+    for (final l in _c.layers) {
+      // Background patterns and frames cover everything; ignore them.
+      if (l.hidden || (l.locked && l.kind == LayerKind.ornament)) continue;
+      final box = _visualKeys[l.id]?.currentContext?.findRenderObject();
+      if (box is! RenderBox || !box.hasSize) continue;
+      final corners = [
+        Offset.zero, box.size.topRight(Offset.zero),
+        box.size.bottomLeft(Offset.zero), box.size.bottomRight(Offset.zero),
+      ].map((p) => box.localToGlobal(p, ancestor: root)).toList();
+      var rect = Rect.fromLTRB(
+        corners.map((p) => p.dx).reduce(math.min),
+        corners.map((p) => p.dy).reduce(math.min),
+        corners.map((p) => p.dx).reduce(math.max),
+        corners.map((p) => p.dy).reduce(math.max),
+      );
+      // Illustrations have transparent margins around the drawing.
+      if (l.kind == LayerKind.art) {
+        rect = rect.deflate(rect.shortestSide * 0.12);
+      }
+      rects.add(rect);
+    }
+    Offset? best;
+    var bestOverlap = double.infinity;
+    for (final spot in _markCandidates()) {
+      final mark = Rect.fromCenter(
+          center: spot, width: _markSize.width, height: _markSize.height)
+          .inflate(3);
+      var overlap = 0.0;
+      for (final r in rects) {
+        final i = mark.intersect(r);
+        if (i.width > 0 && i.height > 0) overlap += i.width * i.height;
+      }
+      if (overlap < bestOverlap) {
+        best = spot;
+        bestOverlap = overlap;
+        if (overlap == 0) break;
+      }
+    }
+    if (best != null && best != _markSpot) setState(() => _markSpot = best);
+  }
+
   EditorController get _c => widget.controller;
   Offset get _center => _c.canvasSize.center(Offset.zero);
 
@@ -258,6 +332,7 @@ class _CanvasContentState extends State<_CanvasContent> {
                   child: layer.locked
                       ? IgnorePointer(
                           child: StoryLayerVisual(
+                            key: _keyFor(layer.id),
                             layer: layer,
                             selected: layer.id == _c.selectedId,
                           ),
@@ -275,6 +350,7 @@ class _CanvasContentState extends State<_CanvasContent> {
                     onScaleUpdate: (d) => _layerUpdate(layer, d),
                     onScaleEnd: _gestureEnd,
                     child: StoryLayerVisual(
+                      key: _keyFor(layer.id),
                       layer: layer,
                       selected: layer.id == _c.selectedId,
                     ),
@@ -290,15 +366,24 @@ class _CanvasContentState extends State<_CanvasContent> {
                             l.kind == LayerKind.watermark && !l.hidden)) {
                       return const SizedBox.shrink();
                     }
-                    final h = _c.canvasSize.height;
-                    // Story: just above Instagram's reply bar; else bottom.
-                    final center = h > 600 ? h * 0.84 : h - 22;
-                    return Align(
-                      alignment: Alignment(0, center / h * 2 - 1),
-                      child: GestureDetector(
-                        onTap: widget.onWatermarkTap,
-                        child: WatermarkBadge(dark: _darkBackground),
-                      ),
+                    // Re-check the free spot after this frame is laid out.
+                    WidgetsBinding.instance
+                        .addPostFrameCallback((_) => _placeMark());
+                    final spot = _markSpot ?? _markCandidates().first;
+                    return Stack(
+                      children: [
+                        Positioned(
+                          left: spot.dx,
+                          top: spot.dy,
+                          child: FractionalTranslation(
+                            translation: const Offset(-0.5, -0.5),
+                            child: GestureDetector(
+                              onTap: widget.onWatermarkTap,
+                              child: WatermarkBadge(dark: _darkBackground),
+                            ),
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),

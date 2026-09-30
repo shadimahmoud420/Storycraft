@@ -25,6 +25,9 @@ class _QuotesSheetState extends State<_QuotesSheet> {
 
   String _label(S s, QuoteCategory c) => switch (c) {
         QuoteCategory.adhkar => s.adhkar,
+        QuoteCategory.dua => s.quotesDua,
+        QuoteCategory.ayah => s.quotesAyah,
+        QuoteCategory.sayings => s.catSaying,
         QuoteCategory.morning => s.morning,
         QuoteCategory.wisdom => s.wisdom,
         QuoteCategory.motivation => s.motivation,
