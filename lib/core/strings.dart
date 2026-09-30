@@ -68,6 +68,34 @@ class S {
   String get removeBgPreparing => _t('removeBgPreparing');
   String get removingBg => _t('removingBg');
   String get addPhoto => _t('addPhoto');
+  String get dailyStory => _t('dailyStory');
+  String get dailyHint => _t('dailyHint');
+  String get anotherDesign => _t('anotherDesign');
+  String get anotherText => _t('anotherText');
+  String get edit => _t('edit');
+  String get auto => _t('auto');
+  String get catDua => _t('catDua');
+  String get catDhikr => _t('catDhikr');
+  String get catAyah => _t('catAyah');
+  String get catWisdom => _t('catWisdom');
+  String get catQuote => _t('catQuote');
+  String get today => _t('today');
+  String get backToToday => _t('backToToday');
+  String get settings => _t('settings');
+  String get watermarkSetting => _t('watermarkSetting');
+  String get watermarkHint => _t('watermarkHint');
+  String get hideWatermark => _t('hideWatermark');
+  String get hideWatermarkHint => _t('hideWatermarkHint');
+  String get hide => _t('hide');
+  String get hijriAdjust => _t('hijriAdjust');
+  String get hijriAdjustHint => _t('hijriAdjustHint');
+  String get reminder => _t('reminder');
+  String get reminderHint => _t('reminderHint');
+  String get reminderTime => _t('reminderTime');
+  String get reminderTitle => _t('reminderTitle');
+  String get reminderDenied => _t('reminderDenied');
+  String get layerOrnament => _t('layerOrnament');
+  String get lock => _t('lock');
   String get cutAuto => _t('cutAuto');
   String get cutAutoHint => _t('cutAutoHint');
   String get cutColor => _t('cutColor');
@@ -265,6 +293,34 @@ class S {
       'removeBgPreparing': 'يتم تجهيز أداة التفريغ لأول مرة… حاول بعد دقيقة',
       'removingBg': 'جارٍ تفريغ الصورة…',
       'addPhoto': 'صورة',
+      'dailyStory': 'ستوري اليوم',
+      'dailyHint': 'تصميم جديد كل يوم بتاريخ اليوم',
+      'anotherDesign': 'تصميم آخر',
+      'anotherText': 'نص آخر',
+      'edit': 'تعديل',
+      'auto': 'تلقائي',
+      'catDua': 'دعاء',
+      'catDhikr': 'ذكر',
+      'catAyah': 'آية',
+      'catWisdom': 'حكمة',
+      'catQuote': 'اقتباس',
+      'today': 'اليوم',
+      'backToToday': 'العودة لليوم',
+      'settings': 'الإعدادات',
+      'watermarkSetting': 'توقيع التطبيق على التصاميم',
+      'watermarkHint': 'علامة StoryCraft صغيرة أسفل التصميم',
+      'hideWatermark': 'إخفاء توقيع التطبيق من التصاميم؟',
+      'hideWatermarkHint': 'يمكنك إعادته من الإعدادات في الشاشة الرئيسية',
+      'hide': 'إخفاء',
+      'hijriAdjust': 'تعديل التاريخ الهجري',
+      'hijriAdjustHint': 'حسب رؤية الهلال في بلدك',
+      'reminder': 'تذكير ستوري اليوم',
+      'reminderHint': 'إشعار يومي عندما يجهز تصميم اليوم',
+      'reminderTime': 'وقت التذكير',
+      'reminderTitle': 'ستوري اليوم جاهز 🌸',
+      'reminderDenied': 'لم يُسمح بالإشعارات. فعّلها من إعدادات الجوال',
+      'layerOrnament': 'زخرفة',
+      'lock': 'قفل',
       'cutAuto': 'تلقائي',
       'cutAutoHint': 'أشخاص وعناصر',
       'cutColor': 'لون الخلفية',
@@ -456,6 +512,34 @@ class S {
       'removeBgPreparing': 'Preparing the cutout tool for first use… try again in a minute',
       'removingBg': 'Removing background…',
       'addPhoto': 'Photo',
+      'dailyStory': 'Story of the Day',
+      'dailyHint': 'A new design every day, dated today',
+      'anotherDesign': 'Another design',
+      'anotherText': 'Another text',
+      'edit': 'Edit',
+      'auto': 'Auto',
+      'catDua': 'Prayer',
+      'catDhikr': 'Dhikr',
+      'catAyah': 'Verse',
+      'catWisdom': 'Wisdom',
+      'catQuote': 'Quote',
+      'today': 'Today',
+      'backToToday': 'Back to today',
+      'settings': 'Settings',
+      'watermarkSetting': 'App mark on designs',
+      'watermarkHint': 'A small StoryCraft mark at the bottom',
+      'hideWatermark': 'Hide the app mark from designs?',
+      'hideWatermarkHint': 'You can turn it back on in Settings on the home screen',
+      'hide': 'Hide',
+      'hijriAdjust': 'Hijri date adjustment',
+      'hijriAdjustHint': 'To match the moon sighting in your country',
+      'reminder': 'Story of the day reminder',
+      'reminderHint': 'A daily notification when today’s design is ready',
+      'reminderTime': 'Reminder time',
+      'reminderTitle': 'Your story of the day is ready 🌸',
+      'reminderDenied': 'Notifications are off. Enable them in your phone settings',
+      'layerOrnament': 'Ornament',
+      'lock': 'Lock',
       'cutAuto': 'Auto',
       'cutAutoHint': 'People & objects',
       'cutColor': 'Background color',

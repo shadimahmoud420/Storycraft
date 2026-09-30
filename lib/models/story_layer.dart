@@ -5,7 +5,14 @@ import 'package:flutter/material.dart';
 
 import '../data/fonts.dart';
 
-enum LayerKind { text, emoji, shape, image, art, signature }
+enum LayerKind { text, emoji, shape, image, art, signature, ornament, watermark }
+
+/// Vector decorations drawn in code (patterns, frames, badges…), tinted
+/// with the layer color. Patterns span the whole canvas.
+enum OrnamentKind {
+  stars, bokeh, waves, rays, dots, // full-canvas patterns
+  frame, crescent, sun, flowers, divider, ring, card, pill,
+}
 
 /// Decorations around a signature name.
 enum SignatureStyle {
@@ -55,6 +62,11 @@ class StoryLayer {
     this.rotation = 0,
     this.opacity = 1,
     this.hidden = false,
+    this.locked = false,
+    this.template,
+    this.ornament = OrnamentKind.stars,
+    this.height = 0,
+    this.seed = 0,
   });
 
   final String id;
@@ -98,6 +110,20 @@ class StoryLayer {
   /// Hidden layers stay in the list but are not drawn or exported.
   bool hidden;
 
+  /// Locked layers ignore touches on the canvas (select them from the
+  /// layers panel). Used for background patterns.
+  bool locked;
+
+  /// Live text: date placeholders such as `{weekday}` or `{hijri}` that are
+  /// filled with the current date when drawn (see DateText). Null = static.
+  String? template;
+
+  /// [LayerKind.ornament]: what to draw, its height (0 = same as [size])
+  /// and a seed for randomized patterns.
+  OrnamentKind ornament;
+  double height;
+  int seed;
+
   bool get isText => kind == LayerKind.text;
 
   StoryLayer copyWith({required String id, Offset? position}) => StoryLayer(
@@ -126,6 +152,11 @@ class StoryLayer {
         rotation: rotation,
         opacity: opacity,
         hidden: hidden,
+        locked: locked,
+        template: template,
+        ornament: ornament,
+        height: height,
+        seed: seed,
       );
 
   StoryLayer clone() => copyWith(id: id);
@@ -227,6 +258,11 @@ class StoryLayer {
         'rotation': rotation,
         'opacity': opacity,
         'hidden': hidden,
+        'locked': locked,
+        if (template != null) 'template': template,
+        'ornament': ornament.name,
+        'height': height,
+        'seed': seed,
       };
 
   factory StoryLayer.fromJson(Map<String, dynamic> j) => StoryLayer(
@@ -260,6 +296,11 @@ class StoryLayer {
         rotation: (j['rotation'] as num? ?? 0).toDouble(),
         opacity: (j['opacity'] as num? ?? 1).toDouble(),
         hidden: j['hidden'] as bool? ?? false,
+        locked: j['locked'] as bool? ?? false,
+        template: j['template'] as String?,
+        ornament: _enum(OrnamentKind.values, j['ornament'], OrnamentKind.stars),
+        height: (j['height'] as num? ?? 0).toDouble(),
+        seed: j['seed'] as int? ?? 0,
       );
 }
 

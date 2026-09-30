@@ -32,6 +32,8 @@ class _LayersPanel extends StatelessWidget {
         LayerKind.shape => s.layerShape,
         LayerKind.image => s.addPhoto,
         LayerKind.art => s.layerArt,
+        LayerKind.ornament => s.layerOrnament,
+        LayerKind.watermark => 'StoryCraft',
       };
 
   IconData _icon(StoryLayer l) => switch (l.kind) {
@@ -41,6 +43,8 @@ class _LayersPanel extends StatelessWidget {
         LayerKind.shape => Icons.crop_square_rounded,
         LayerKind.image => Icons.image_rounded,
         LayerKind.art => Icons.auto_awesome_rounded,
+        LayerKind.ornament => Icons.texture_rounded,
+        LayerKind.watermark => Icons.verified_rounded,
       };
 
   @override
@@ -133,6 +137,13 @@ class _LayersPanel extends StatelessWidget {
                                 if (l.opacity < 1)
                                   Text('${(l.opacity * 100).round()}%',
                                       style: theme.textTheme.bodySmall),
+                                IconButton(
+                                  tooltip: s.lock,
+                                  icon: Icon(l.locked
+                                      ? Icons.lock_rounded
+                                      : Icons.lock_open_rounded),
+                                  onPressed: () => c.toggleLocked(l.id),
+                                ),
                                 IconButton(
                                   icon: Icon(l.hidden
                                       ? Icons.visibility_off_rounded

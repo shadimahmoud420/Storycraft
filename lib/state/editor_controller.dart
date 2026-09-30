@@ -377,6 +377,15 @@ class EditorController extends ChangeNotifier {
   void bringToFront(String id) => moveLayer(id, _layers.length - 1);
   void sendToBack(String id) => moveLayer(id, 0);
 
+  /// Locks a layer against canvas touches (or unlocks it).
+  void toggleLocked(String id) {
+    final layer = _layers.where((l) => l.id == id).firstOrNull;
+    if (layer == null) return;
+    checkpoint();
+    layer.locked = !layer.locked;
+    _changed();
+  }
+
   /// Shows or hides a layer; a hidden layer is deselected.
   void toggleHidden(String id) {
     final layer = _layers.where((l) => l.id == id).firstOrNull;

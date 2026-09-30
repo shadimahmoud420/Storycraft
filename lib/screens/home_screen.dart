@@ -11,7 +11,15 @@ import '../data/templates.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
 import '../services/draft_store.dart';
+import '../services/app_settings.dart';
+import '../services/daily_story.dart';
 import '../services/image_processing.dart';
+import '../services/reminder_service.dart';
+import '../core/config.dart';
+import '../core/date_text.dart';
+import '../widgets/settings_sheet.dart';
+import '../widgets/story_view.dart';
+import 'daily_screen.dart';
 import 'brand_kit_screen.dart';
 import 'signature_screen.dart';
 import 'editor_screen.dart';
@@ -28,6 +36,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep the next two weeks of daily reminders scheduled.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ReminderService.instance.sync(title: S.of(context).reminderTitle);
+      }
+    });
+  }
 
   Future<void> _startFromPhoto({List<StoryLayer> layers = const []}) async {
     final s = S.of(context);
@@ -186,6 +205,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: Text(s.brandKit),
                         ),
                         const Spacer(),
+                        IconButton(
+                          tooltip: s.settings,
+                          onPressed: () => showSettingsSheet(context),
+                          icon: const Icon(Icons.settings_rounded),
+                        ),
                         TextButton.icon(
                           onPressed: () => widget.localeController
                               .toggle(Localizations.localeOf(context)),
@@ -211,6 +235,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    ValueListenableBuilder<AppSettingsData>(
+                      valueListenable: AppSettings.instance,
+                      builder: (context, settings, child) => _DailyCard(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const DailyScreen()),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     _DraftsRow(onOpen: _openDraft),
                     _StartCard(
                       icon: Icons.dashboard_customize_rounded,
@@ -475,6 +509,102 @@ class _DraftsRow extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Home entry for the story of the day, with a live mini preview.
+class _DailyCard extends StatelessWidget {
+  const _DailyCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final text = Theme.of(context).textTheme;
+    final now = DateTime.now();
+    final story = DailyStoryGenerator.build(DateTime(now.year, now.month, now.day));
+    return Material(
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0B3B35), Color(0xFF1B2A4A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 84,
+                    height: 150,
+                    child: FittedBox(
+                      child: SizedBox(
+                        width: AppConfig.canvasWidth,
+                        height: AppConfig.canvasHeight,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: StoryBackgroundView(background: story.background),
+                            ),
+                            for (final l in story.layers)
+                              PositionedLayer(layer: l, child: StoryLayerVisual(layer: l)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDEB860),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(s.today,
+                            style: text.labelMedium?.copyWith(
+                                color: const Color(0xFF1B2A4A), fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(s.dailyStory,
+                          style: text.titleLarge?.copyWith(
+                              color: Colors.white, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text('${DateText.weekday(now)} · ${DateText.greg(now)}',
+                          style: text.bodyMedium?.copyWith(color: Colors.white)),
+                      Text(DateText.hijri(now),
+                          style: text.bodySmall?.copyWith(color: Colors.white70)),
+                      if (story.info.title != null || story.info.tag != null) ...[
+                        const SizedBox(height: 6),
+                        Text('🌙 ${story.info.title ?? story.info.tag}',
+                            style: text.bodySmall?.copyWith(color: const Color(0xFFDEB860))),
+                      ],
+                      const SizedBox(height: 6),
+                      Text(s.dailyHint,
+                          style: text.bodySmall?.copyWith(color: Colors.white60)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 18),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

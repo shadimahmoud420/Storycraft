@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/date_text.dart';
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../data/fonts.dart';
@@ -14,6 +15,7 @@ import '../data/formats.dart';
 import '../data/palettes.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import '../services/app_settings.dart';
 import '../services/background_remover.dart';
 import '../services/brand_kit.dart';
 import '../services/draft_store.dart';
@@ -173,9 +175,16 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<void> _editLayer(StoryLayer layer) async {
     switch (layer.kind) {
       case LayerKind.text:
-        final result = await showTextEditorSheet(context, layer);
+        // Live date text is edited as its current wording; changing the
+        // words turns it into normal (fixed) text.
+        final shown = layer.template == null
+            ? layer.text
+            : DateText.resolve(layer.template!, DateTime.now());
+        final result =
+            await showTextEditorSheet(context, layer.clone()..text = shown);
         if (result == null) return;
         _controller.updateLayer(layer.id, (l) {
+          if (result.text != shown) l.template = null;
           l
             ..text = result.text
             ..font = result.font
@@ -195,7 +204,9 @@ class _EditorScreenState extends State<EditorScreen> {
       case LayerKind.shape:
       case LayerKind.emoji:
       case LayerKind.signature:
+      case LayerKind.ornament:
         await _editColor(layer);
+      case LayerKind.watermark:
       case LayerKind.image:
       case LayerKind.art:
         break;
@@ -626,6 +637,32 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  /// Tapping the app mark offers to turn it off (Settings can restore it).
+  Future<void> _askHideWatermark() async {
+    final s = S.of(context);
+    final hide = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(s.hideWatermark),
+        content: Text(s.hideWatermarkHint),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.hide),
+          ),
+        ],
+      ),
+    );
+    if (hide == true) {
+      final settings = AppSettings.instance;
+      await settings.update(settings.value.copyWith(showWatermark: false));
+    }
+  }
+
   void _openLayers() => showLayersSheet(context, _controller);
 
   Future<void> _runImageOp(ImageOperation op) async {
@@ -748,6 +785,7 @@ class _EditorScreenState extends State<EditorScreen> {
                                 controller: c,
                                 boundaryKey: _boundaryKey,
                                 onEditLayer: _editLayer,
+                                onWatermarkTap: _askHideWatermark,
                               ),
                             ),
                             if (c.layers.isEmpty && !c.isBusy)
@@ -775,7 +813,8 @@ class _EditorScreenState extends State<EditorScreen> {
                     if (c.selected != null)
                       _SelectionBar(
                         canEdit: c.selected!.kind != LayerKind.image &&
-                            c.selected!.kind != LayerKind.art,
+                            c.selected!.kind != LayerKind.art &&
+                            c.selected!.kind != LayerKind.watermark,
                         editLabel: c.selected!.isText ? s.text : s.style,
                         onEdit: () => _editLayer(c.selected!),
                         onTransform: () => _editTransform(c.selected!),

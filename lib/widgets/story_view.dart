@@ -10,6 +10,8 @@ import '../data/formats.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import '../core/date_text.dart';
+import 'ornament_painter.dart';
 import 'signature_view.dart';
 import 'styled_text.dart';
 
@@ -97,7 +99,34 @@ class StoryLayerVisual extends StatelessWidget {
         ? const [BoxShadow(color: Color(0x55000000), blurRadius: 4)]
         : null;
 
+    var layer = this.layer;
+    if (layer.template != null) {
+      // Live date text: always shows the current (or previewed) day.
+      layer = layer.clone()
+        ..text = DateText.resolve(layer.template!, StoryClock.of(context));
+    }
+
     switch (layer.kind) {
+      case LayerKind.ornament:
+        return Container(
+          decoration: BoxDecoration(
+            border: border,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: CustomPaint(
+            size: Size(layer.size, layer.height > 0 ? layer.height : layer.size),
+            painter: OrnamentPainter(layer.ornament, layer.color, layer.seed),
+          ),
+        );
+      case LayerKind.watermark:
+        return Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            border: border,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: WatermarkBadge(dark: layer.color.computeLuminance() > 0.5),
+        );
       case LayerKind.text:
         final isRtl = StoryFonts.hasArabic(layer.text);
         Widget box = Container(

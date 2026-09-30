@@ -3,7 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/formats.dart';
+import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import '../services/app_settings.dart';
+import 'ornament_painter.dart';
 import '../state/editor_controller.dart';
 import 'story_view.dart';
 
@@ -15,11 +18,13 @@ class StoryCanvas extends StatelessWidget {
     required this.controller,
     required this.boundaryKey,
     required this.onEditLayer,
+    this.onWatermarkTap,
   });
 
   final EditorController controller;
   final GlobalKey boundaryKey;
   final ValueChanged<StoryLayer> onEditLayer;
+  final VoidCallback? onWatermarkTap;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +53,7 @@ class StoryCanvas extends StatelessWidget {
                         boundaryKey: boundaryKey,
                         viewScale: viewScale,
                         onEditLayer: onEditLayer,
+                        onWatermarkTap: onWatermarkTap,
                       ),
                     ),
                   ),
@@ -67,12 +73,14 @@ class _CanvasContent extends StatefulWidget {
     required this.boundaryKey,
     required this.viewScale,
     required this.onEditLayer,
+    this.onWatermarkTap,
   });
 
   final EditorController controller;
   final GlobalKey boundaryKey;
   final double viewScale;
   final ValueChanged<StoryLayer> onEditLayer;
+  final VoidCallback? onWatermarkTap;
 
   @override
   State<_CanvasContent> createState() => _CanvasContentState();
@@ -204,6 +212,16 @@ class _CanvasContentState extends State<_CanvasContent> {
     _c.transformImage(_baseOffset, _baseScale * d.scale);
   }
 
+  bool get _darkBackground {
+    final bg = _c.background;
+    return switch (bg.kind) {
+      BackgroundKind.solid => bg.color.computeLuminance() < 0.5,
+      BackgroundKind.gradient =>
+        bg.gradientColors.last.computeLuminance() < 0.5,
+      BackgroundKind.image => true,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -236,7 +254,15 @@ class _CanvasContentState extends State<_CanvasContent> {
                 PositionedLayer(
                   key: ValueKey(layer.id),
                   layer: layer,
-                  child: GestureDetector(
+                  // Locked layers (background patterns) let touches through.
+                  child: layer.locked
+                      ? IgnorePointer(
+                          child: StoryLayerVisual(
+                            layer: layer,
+                            selected: layer.id == _c.selectedId,
+                          ),
+                        )
+                      : GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
                       if (layer.id == _c.selectedId) {
@@ -254,11 +280,34 @@ class _CanvasContentState extends State<_CanvasContent> {
                     ),
                   ),
                 ),
+              // App mark (setting), unless the design already has one.
+              Positioned.fill(
+                child: ValueListenableBuilder<AppSettingsData>(
+                  valueListenable: AppSettings.instance,
+                  builder: (context, settings, child) {
+                    if (!settings.showWatermark ||
+                        _c.layers.any((l) =>
+                            l.kind == LayerKind.watermark && !l.hidden)) {
+                      return const SizedBox.shrink();
+                    }
+                    final h = _c.canvasSize.height;
+                    // Story: just above Instagram's reply bar; else bottom.
+                    final center = h > 600 ? h * 0.84 : h - 22;
+                    return Align(
+                      alignment: Alignment(0, center / h * 2 - 1),
+                      child: GestureDetector(
+                        onTap: widget.onWatermarkTap,
+                        child: WatermarkBadge(dark: _darkBackground),
+                      ),
+                    );
+                  },
+                ),
+              ),
               // The selected layer keeps its place in the stack, but an
               // invisible copy on top receives the touches, so a layer
               // under a photo can still be moved, and its frame stays
               // visible.
-              if (_c.selected case final sel? when !sel.hidden)
+              if (_c.selected case final sel? when !sel.hidden && !sel.locked)
                 PositionedLayer(
                   key: const ValueKey('selection-handle'),
                   layer: sel,
