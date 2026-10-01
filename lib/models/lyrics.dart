@@ -21,6 +21,9 @@ enum LyricEffect {
 
   /// Slides in from the side.
   slide,
+
+  /// Cinematic: comes into focus from a soft blur while settling.
+  soft,
 }
 
 /// One line of the song, with the moment it starts (null until synced).
@@ -43,7 +46,22 @@ class LyricsStyle {
     this.y = 0.72,
     this.box = false,
     this.glow = true,
+    this.bold = true,
+    this.shade = false,
+    this.credit = '',
   });
+
+  /// Cinematic look: calligraphy, soft glow, focus-in, darkened bottom.
+  static const cinematic = LyricsStyle(
+    fontFamily: 'Aref Ruqaa',
+    color: Colors.white,
+    accent: Color(0xFFFFF4E0),
+    effect: LyricEffect.soft,
+    size: 46,
+    y: 0.7,
+    bold: false,
+    shade: true,
+  );
 
   final String fontFamily;
   final Color color;
@@ -62,6 +80,15 @@ class LyricsStyle {
   final bool box;
   final bool glow;
 
+  /// Bold weight (calligraphy fonts look best regular).
+  final bool bold;
+
+  /// A soft dark gradient over the bottom of the video.
+  final bool shade;
+
+  /// Small line under the lyrics (song · artist), always shown.
+  final String credit;
+
   LyricsStyle copyWith({
     String? fontFamily,
     Color? color,
@@ -71,6 +98,9 @@ class LyricsStyle {
     double? y,
     bool? box,
     bool? glow,
+    bool? bold,
+    bool? shade,
+    String? credit,
   }) =>
       LyricsStyle(
         fontFamily: fontFamily ?? this.fontFamily,
@@ -81,6 +111,9 @@ class LyricsStyle {
         y: y ?? this.y,
         box: box ?? this.box,
         glow: glow ?? this.glow,
+        bold: bold ?? this.bold,
+        shade: shade ?? this.shade,
+        credit: credit ?? this.credit,
       );
 }
 
@@ -101,6 +134,9 @@ class LyricTiming {
 @immutable
 class LyricsFrame {
   const LyricsFrame(this.line, this.appear, this.leave, this.progress);
+
+  /// No lyric on screen (only the shade / credit, if any).
+  static const none = LyricsFrame(-1, 0, 0, 0);
 
   static const steps = 60;
 
@@ -182,7 +218,8 @@ class Lyrics {
     if (t == null || t.durationMs <= 0) return null;
     final lt = (ms - t.startMs).toDouble();
     final dur = t.durationMs.toDouble();
-    final appear = lt / math.min(450, dur * 0.4);
+    final entrance = effect == LyricEffect.soft ? 800 : 450;
+    final appear = lt / math.min(entrance, dur * 0.4);
     final leave = dur > 700 ? (t.endMs - ms) / 250 : 1.0;
     final progress = switch (effect) {
       LyricEffect.karaoke => lt / (dur * 0.9),

@@ -37,10 +37,13 @@ class LyricVideoExporter {
     final map = <int>[];
     for (var f = 0; f < count; f++) {
       final ms = f * 1000 ~/ fps;
-      final frame = Lyrics.frameAt(timings, style.effect, ms);
+      var frame = Lyrics.frameAt(timings, style.effect, ms);
       if (frame == null || lines[frame.line].text.isEmpty) {
-        map.add(-1);
-        continue;
+        if (!lyricsHaveBackdrop(style)) {
+          map.add(-1);
+          continue;
+        }
+        frame = LyricsFrame.none;
       }
       final known = rendered[frame];
       if (known != null) {
@@ -52,7 +55,7 @@ class LyricVideoExporter {
       paintLyrics(
         Canvas(recorder),
         Size(width.toDouble(), height.toDouble()),
-        text: lines[frame.line].text,
+        text: frame.line < 0 ? '' : lines[frame.line].text,
         style: style,
         frame: frame,
       );

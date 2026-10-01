@@ -14,7 +14,6 @@ import 'package:video_composer/video_composer.dart';
 import 'package:video_player/video_player.dart';
 
 import '../core/strings.dart';
-import '../data/fonts.dart';
 import '../models/lyrics.dart';
 import '../services/lyric_video_exporter.dart';
 import '../widgets/lyrics_painter.dart';
@@ -36,7 +35,33 @@ String lyricEffectLabel(S s, LyricEffect e) => switch (e) {
       LyricEffect.words => s.lvWords,
       LyricEffect.zoom => s.lvZoom,
       LyricEffect.slide => s.lvSlide,
+      LyricEffect.soft => s.lvSoft,
     };
+
+/// Fonts offered for lyrics: calligraphy first, then modern.
+const lyricFonts = <(String, String)>[
+  ('Aref Ruqaa', 'رقعة'),
+  ('Katibeh', 'كاتبة'),
+  ('Alkalami', 'القلمي'),
+  ('Amiri', 'أميري'),
+  ('Lateef', 'لطيف'),
+  ('Rakkas', 'رقّاص'),
+  ('Cairo', 'القاهرة'),
+  ('Tajawal', 'تجوال'),
+  ('Changa', 'تشانجا'),
+  ('Almarai', 'المراعي'),
+];
+
+/// Ready-made looks (the credit line is kept when switching).
+List<(String, LyricsStyle)> lyricPresets(S s) => [
+      (s.lvCinematic, LyricsStyle.cinematic),
+      (s.lvClassic, const LyricsStyle()),
+      (
+        s.lvSimple,
+        const LyricsStyle(
+            effect: LyricEffect.fade, box: true, glow: false, y: 0.78),
+      ),
+    ];
 
 /// Song video: a silent video, a song from the user's files and its
 /// lyrics, synced by tapping and animated with effects, exported as MP4.
@@ -60,7 +85,8 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
   int _audioStartMs = 0;
 
   List<LyricLine> _lines = [];
-  LyricsStyle _style = const LyricsStyle();
+  LyricsStyle _style = LyricsStyle.cinematic;
+  final _credit = TextEditingController();
 
   final _position = ValueNotifier<int>(0);
   late final Ticker _ticker = createTicker(_onTick);
@@ -82,6 +108,7 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     _video?.dispose();
     _audio?.dispose();
     _position.dispose();
+    _credit.dispose();
     super.dispose();
   }
 
@@ -596,6 +623,21 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
   Widget _lyricsTab(S s) => ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         children: [
+          Wrap(
+            spacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(s.lvTemplates),
+              for (final (label, preset) in lyricPresets(s))
+                ActionChip(
+                  avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: Text(label),
+                  onPressed: () => setState(() =>
+                      _style = preset.copyWith(credit: _style.credit)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
           Row(
             spacing: 8,
             children: [
@@ -618,6 +660,17 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
           const SizedBox(height: 6),
           Text(_lines.isEmpty ? s.lvNoLyrics : s.lvSyncHint,
               style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _credit,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: s.lvCredit,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (v) =>
+                setState(() => _style = _style.copyWith(credit: v)),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
@@ -670,14 +723,14 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                for (final f in StoryFonts.arabic.take(12))
+                for (final (family, label) in lyricFonts)
                   Padding(
                     padding: const EdgeInsetsDirectional.only(end: 6),
                     child: ChoiceChip(
-                      label: Text('أغنية', style: f.style()),
-                      selected: _style.fontFamily == f.family,
+                      label: Text(label, style: TextStyle(fontFamily: family)),
+                      selected: _style.fontFamily == family,
                       onSelected: (_) => setState(() =>
-                          _style = _style.copyWith(fontFamily: f.family)),
+                          _style = _style.copyWith(fontFamily: family)),
                     ),
                   ),
               ],
@@ -725,6 +778,18 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
                 selected: _style.glow,
                 onSelected: (v) =>
                     setState(() => _style = _style.copyWith(glow: v)),
+              ),
+              FilterChip(
+                label: Text(s.lvBold),
+                selected: _style.bold,
+                onSelected: (v) =>
+                    setState(() => _style = _style.copyWith(bold: v)),
+              ),
+              FilterChip(
+                label: Text(s.lvShade),
+                selected: _style.shade,
+                onSelected: (v) =>
+                    setState(() => _style = _style.copyWith(shade: v)),
               ),
             ],
           ),

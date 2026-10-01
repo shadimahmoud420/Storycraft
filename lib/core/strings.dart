@@ -125,6 +125,14 @@ class S {
   String get lvSaved => _t('lvSaved');
   String get lvFailed => _t('lvFailed');
   String get lvTooLong => _t('lvTooLong');
+  String get lvSoft => _t('lvSoft');
+  String get lvTemplates => _t('lvTemplates');
+  String get lvCinematic => _t('lvCinematic');
+  String get lvClassic => _t('lvClassic');
+  String get lvSimple => _t('lvSimple');
+  String get lvCredit => _t('lvCredit');
+  String get lvBold => _t('lvBold');
+  String get lvShade => _t('lvShade');
   String get designStory => _t('designStory');
   String get strength => _t('strength');
   String get timer => _t('timer');
@@ -403,6 +411,14 @@ class S {
       'lvSaved': 'تم حفظ الفيديو في المعرض',
       'lvFailed': 'تعذّر تصدير الفيديو',
       'lvTooLong': 'سيُستخدم أول ٦٠ ثانية من الفيديو',
+      'lvSoft': 'ناعم',
+      'lvTemplates': 'قوالب جاهزة',
+      'lvCinematic': 'سينمائي',
+      'lvClassic': 'كاريوكي ذهبي',
+      'lvSimple': 'بسيط بخلفية',
+      'lvCredit': 'سطر صغير تحت الكلمات (الأغنية · الفنان)',
+      'lvBold': 'عريض',
+      'lvShade': 'تظليل سينمائي',
       'designStory': 'صمّم ستوري',
       'strength': 'الدرجة',
       'timer': 'المؤقت',
@@ -675,6 +691,14 @@ class S {
       'lvSaved': 'Video saved to your gallery',
       'lvFailed': 'Could not export the video',
       'lvTooLong': 'The first 60 seconds will be used',
+      'lvSoft': 'Soft focus',
+      'lvTemplates': 'Presets',
+      'lvCinematic': 'Cinematic',
+      'lvClassic': 'Gold karaoke',
+      'lvSimple': 'Simple box',
+      'lvCredit': 'Small line under the lyrics (song · artist)',
+      'lvBold': 'Bold',
+      'lvShade': 'Cinematic shade',
       'designStory': 'Design a story',
       'strength': 'Strength',
       'timer': 'Timer',

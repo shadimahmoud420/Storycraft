@@ -11,7 +11,9 @@ const double lyricsDesignWidth = 360;
 
 final _arabic = RegExp(r'[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]');
 
-/// Paints one lyric line in the state [frame] onto a [size] canvas.
+/// Paints the lyrics overlay onto a [size] canvas: the optional shade and
+/// credit line, and [text] in the state [frame] ([LyricsFrame.none] for no
+/// lyric on screen).
 void paintLyrics(
   Canvas canvas,
   Size size, {
@@ -19,7 +21,67 @@ void paintLyrics(
   required LyricsStyle style,
   required LyricsFrame frame,
 }) {
-  if (text.isEmpty) return;
+  if (style.shade) _paintShade(canvas, size);
+  if (style.credit.trim().isNotEmpty) _paintCredit(canvas, size, style);
+  if (frame.line >= 0 && text.isNotEmpty) {
+    _paintLine(canvas, size, text, style, frame);
+  }
+}
+
+/// Whether the overlay shows anything even without a lyric on screen.
+bool lyricsHaveBackdrop(LyricsStyle style) =>
+    style.shade || style.credit.trim().isNotEmpty;
+
+/// Soft cinematic darkening of the lower part, so white text reads well.
+void _paintShade(Canvas canvas, Size size) {
+  final rect = Offset.zero & size;
+  canvas.drawRect(
+    rect,
+    Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0x00000000),
+          Color(0x00000000),
+          Color(0x59000000),
+          Color(0x8C000000),
+        ],
+        stops: [0, 0.45, 0.78, 1],
+      ).createShader(rect),
+  );
+}
+
+/// The small "song · artist" line under the lyrics (letter-spaced when
+/// Latin; Arabic letters must stay joined).
+void _paintCredit(Canvas canvas, Size size, LyricsStyle style) {
+  final scale = size.width / lyricsDesignWidth;
+  final h = size.height / scale;
+  final text = style.credit.trim();
+  final rtl = _arabic.hasMatch(text);
+  final tp = TextPainter(
+    text: TextSpan(
+      text: rtl ? text : text.toUpperCase(),
+      style: TextStyle(
+        fontFamily: rtl ? 'Cairo' : 'Montserrat',
+        fontSize: 8.5,
+        letterSpacing: rtl ? 0.5 : 4,
+        color: Colors.white.withValues(alpha: 0.75),
+        shadows: const [Shadow(color: Color(0x99000000), blurRadius: 4)],
+      ),
+    ),
+    textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+    textAlign: TextAlign.center,
+  )..layout(maxWidth: lyricsDesignWidth - 48);
+  final y = (style.y * h + style.size * 1.15 + 6).clamp(0.0, h - tp.height - 6);
+  canvas.save();
+  canvas.scale(scale);
+  tp.paint(canvas, Offset((lyricsDesignWidth - tp.width) / 2, y));
+  canvas.restore();
+}
+
+void _paintLine(Canvas canvas, Size size, String text, LyricsStyle style,
+    LyricsFrame frame) {
   final scale = size.width / lyricsDesignWidth;
   final w = lyricsDesignWidth, h = size.height / scale;
   final rtl = _arabic.hasMatch(text);
@@ -29,10 +91,14 @@ void paintLyrics(
   final p = frame.progressT;
 
   List<Shadow> shadows(double alpha) => [
-        if (style.glow)
+        if (style.glow) ...[
           Shadow(
-              color: style.accent.withValues(alpha: 0.75 * alpha),
-              blurRadius: 16),
+              color: style.accent.withValues(alpha: 0.7 * alpha),
+              blurRadius: 8),
+          Shadow(
+              color: style.accent.withValues(alpha: 0.55 * alpha),
+              blurRadius: 22),
+        ],
         Shadow(
             color: Colors.black.withValues(alpha: 0.55 * alpha),
             blurRadius: 6,
@@ -42,7 +108,7 @@ void paintLyrics(
   TextStyle base(Color color, [double alpha = 1]) => TextStyle(
         fontFamily: style.fontFamily,
         fontSize: style.size,
-        fontWeight: FontWeight.w700,
+        fontWeight: style.bold ? FontWeight.w700 : FontWeight.w400,
         height: 1.35,
         color: color.withValues(alpha: color.a * alpha),
         shadows: shadows(alpha),
@@ -82,6 +148,8 @@ void paintLyrics(
       dx += (1 - appear) * 60 * (rtl ? 1 : -1);
     case LyricEffect.zoom:
       zoom = 0.55 + 0.45 * Curves.elasticOut.transform(frame.appearT);
+    case LyricEffect.soft:
+      zoom = 1.06 - 0.06 * appear;
     case LyricEffect.karaoke || LyricEffect.wipe || LyricEffect.words:
       break;
   }
@@ -104,8 +172,17 @@ void paintLyrics(
     canvas.translate(-center.dx, -center.dy);
   }
   final bounds = rect.inflate(40);
+  // Soft: out of focus at first, sharpening as it appears.
+  // (sigma is in design units: the canvas transform scales it.)
+  final blur = effect == LyricEffect.soft ? (1 - appear) * 6 : 0.0;
   canvas.saveLayer(
-      bounds, Paint()..color = Colors.black.withValues(alpha: alpha));
+    bounds,
+    Paint()
+      ..color = Colors.black.withValues(alpha: alpha)
+      ..imageFilter = blur > 0.05
+          ? ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur)
+          : null,
+  );
 
   if (style.box) {
     canvas.drawRRect(
@@ -208,12 +285,14 @@ class LyricsOverlay extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: positionMs,
       builder: (context, ms, _) {
-        final frame = Lyrics.frameAt(timings, style.effect, ms);
+        final frame = Lyrics.frameAt(timings, style.effect, ms) ??
+            LyricsFrame.none;
         return CustomPaint(
           size: Size.infinite,
-          painter: frame == null
+          painter: frame.line < 0 && !lyricsHaveBackdrop(style)
               ? null
-              : _LyricsPainter(lines[frame.line].text, style, frame),
+              : _LyricsPainter(
+                  frame.line < 0 ? '' : lines[frame.line].text, style, frame),
         );
       },
     );
