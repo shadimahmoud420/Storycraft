@@ -15,6 +15,7 @@ import 'package:video_player/video_player.dart';
 
 import '../core/strings.dart';
 import '../models/lyrics.dart';
+import '../services/lyric_video_draft.dart';
 import '../services/lyric_video_exporter.dart';
 import '../widgets/lyrics_painter.dart';
 
@@ -73,7 +74,7 @@ class LyricVideoScreen extends StatefulWidget {
 }
 
 class _LyricVideoScreenState extends State<LyricVideoScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   String? _videoPath;
   VideoInfo? _info;
   VideoPlayerController? _video;
@@ -83,6 +84,9 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
   AudioPlayer? _audio;
   int _audioLengthMs = 0;
   int _audioStartMs = 0;
+
+  /// End of the chosen part of the song (null = as long as the video).
+  int? _audioEndMs;
 
   List<LyricLine> _lines = [];
   LyricsStyle _style = LyricsStyle.cinematic;
@@ -100,13 +104,149 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
   /// Language for automatic lyrics.
   String _locale = 'ar-SA';
 
-  int get _durationMs => math.min(
-      _info?.durationMs ?? 0, LyricVideoExporter.maxDurationMs);
+  /// Length of the result: the video, cut to the chosen part of the song
+  /// when that is shorter, and at most a minute.
+  int get _durationMs {
+    var d = math.min(_info?.durationMs ?? 0, LyricVideoExporter.maxDurationMs);
+    final end = _audioEndMs;
+    if (_audioPath != null && end != null) {
+      d = math.min(d, math.max(1000, end - _audioStartMs));
+    }
+    return d;
+  }
+
+  // --- Draft (auto-save) -----------------------------------------------------
+
+  Timer? _saveTimer;
+  bool _restoring = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _restore();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _pause();
+      _saveNow();
+    }
+  }
+
+  /// Every change schedules a save shortly after.
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _scheduleSave();
+  }
+
+  void _scheduleSave() {
+    if (_restoring || _videoPath == null) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 700), _saveNow);
+  }
+
+  Future<void> _saveNow() async {
+    _saveTimer?.cancel();
+    if (_restoring || _videoPath == null) return;
+    try {
+      await LyricVideoDraft.save({
+        'video': _videoPath,
+        'audio': _audioPath,
+        'audioName': _audioName,
+        'audioStart': _audioStartMs,
+        'audioEnd': _audioEndMs,
+        'lines': [for (final l in _lines) l.toJson()],
+        'style': _style.toJson(),
+        'locale': _locale,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _restore() async {
+    final j = await LyricVideoDraft.load();
+    if (j == null || !mounted) {
+      _restoring = false;
+      return;
+    }
+    try {
+      await _openVideo(j['video'] as String, keep: false);
+      final audio = j['audio'] as String?;
+      if (audio != null) {
+        await _openSong(audio, j['audioName'] as String? ?? '', keep: false);
+      }
+      if (!mounted) return;
+      final style = LyricsStyle.fromJson(
+          (j['style'] as Map?)?.cast<String, Object?>() ?? const {});
+      _credit.text = style.credit;
+      setState(() {
+        _audioStartMs = (j['audioStart'] as num?)?.toInt() ?? 0;
+        _audioEndMs = (j['audioEnd'] as num?)?.toInt();
+        _lines = [
+          for (final l in (j['lines'] as List? ?? const []))
+            LyricLine.fromJson((l as Map).cast<String, Object?>()),
+        ];
+        _style = style;
+        _locale = j['locale'] as String? ?? _locale;
+      });
+      _toast(S.of(context).lvRestored);
+    } catch (_) {
+      // A broken draft: start fresh.
+    } finally {
+      _restoring = false;
+    }
+  }
+
+  Future<void> _newProject() async {
+    final s = S.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(s.lvNewProject),
+        content: Text(s.lvNewProjectAsk),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.lvNewProject),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await _pause();
+    _saveTimer?.cancel();
+    await LyricVideoDraft.clear();
+    await _video?.dispose();
+    await _audio?.dispose();
+    _credit.clear();
+    _position.value = 0;
+    setState(() {
+      _video = null;
+      _videoPath = null;
+      _info = null;
+      _audio = null;
+      _audioPath = null;
+      _audioName = null;
+      _audioStartMs = 0;
+      _audioEndMs = null;
+      _lines = [];
+      _style = LyricsStyle.cinematic;
+    });
+  }
 
   List<LyricTiming> get _timings => Lyrics.timings(_lines, _durationMs);
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _saveNow();
     _ticker.dispose();
     _video?.dispose();
     _audio?.dispose();
@@ -126,24 +266,35 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     if (picked == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      final info = await VideoComposer.probe(picked.path);
-      final controller = VideoPlayerController.file(File(picked.path));
-      await controller.initialize();
-      await controller.setVolume(0);
-      await _pause();
-      _video?.dispose();
-      setState(() {
-        _videoPath = picked.path;
-        _info = info;
-        _video = controller;
-      });
-      _position.value = 0;
+      final info = await _openVideo(picked.path, keep: true);
       if (info.durationMs > LyricVideoExporter.maxDurationMs) _toast(s.lvTooLong);
     } catch (_) {
       _toast(s.lvFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Loads a video ([keep]: copy it into the draft first).
+  Future<VideoInfo> _openVideo(String path, {required bool keep}) async {
+    if (keep) path = await LyricVideoDraft.keepMedia(path, 'video');
+    final info = await VideoComposer.probe(path);
+    final controller = VideoPlayerController.file(File(path));
+    await controller.initialize();
+    await controller.setVolume(0);
+    await _pause();
+    await _video?.dispose();
+    if (!mounted) {
+      await controller.dispose();
+      return info;
+    }
+    setState(() {
+      _videoPath = path;
+      _info = info;
+      _video = controller;
+    });
+    _position.value = 0;
+    return info;
   }
 
   Future<void> _pickSong() async {
@@ -161,16 +312,11 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
       final path =
           '${tmp.path}/song_${DateTime.now().millisecondsSinceEpoch}.$ext';
       await File(path).writeAsBytes(await file.readAsBytes());
-      final player = AudioPlayer();
-      final length = await player.setFilePath(path);
-      await _pause();
-      await _audio?.dispose();
+      await _openSong(path, file.name, keep: true);
+      File(path).delete().ignore();
       setState(() {
-        _audio = player;
-        _audioPath = path;
-        _audioName = file.name;
-        _audioLengthMs = length?.inMilliseconds ?? 0;
         _audioStartMs = 0;
+        _audioEndMs = null;
       });
     } catch (_) {
       _toast(s.lvFailed);
@@ -179,13 +325,34 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     }
   }
 
+  /// Loads a song ([keep]: copy it into the draft first).
+  Future<void> _openSong(String path, String name, {required bool keep}) async {
+    if (keep) path = await LyricVideoDraft.keepMedia(path, 'song');
+    final player = AudioPlayer();
+    final length = await player.setFilePath(path);
+    await _pause();
+    await _audio?.dispose();
+    if (!mounted) {
+      await player.dispose();
+      return;
+    }
+    setState(() {
+      _audio = player;
+      _audioPath = path;
+      _audioName = name;
+      _audioLengthMs = length?.inMilliseconds ?? 0;
+    });
+  }
+
   Future<void> _removeSong() async {
     await _pause();
     await _audio?.dispose();
+    LyricVideoDraft.removeMedia('song').ignore();
     setState(() {
       _audio = null;
       _audioPath = null;
       _audioName = null;
+      _audioEndMs = null;
     });
   }
 
@@ -406,6 +573,7 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
       output = await LyricVideoExporter.export(
         videoPath: path,
         info: info,
+        durationMs: _durationMs,
         audioPath: _audioPath,
         audioStartMs: _audioStartMs,
         lines: _lines,
@@ -477,6 +645,10 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
 
   // --- UI --------------------------------------------------------------------
 
+  /// m:ss.d, for trimming.
+  static String _clockFine(int ms) =>
+      '${_clock(ms)}.${(ms % 1000) ~/ 100}';
+
   static String _clock(int ms) {
     final sec = ms ~/ 1000;
     return '${sec ~/ 60}:${(sec % 60).toString().padLeft(2, '0')}';
@@ -490,6 +662,12 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
       appBar: AppBar(
         title: Text(s.lvTitle),
         actions: [
+          if (video != null)
+            IconButton(
+              tooltip: s.lvNewProject,
+              onPressed: _busy ? null : _newProject,
+              icon: const Icon(Icons.note_add_outlined),
+            ),
           if (video != null)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
@@ -669,27 +847,86 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
                 ),
             ],
           ),
-          if (_audioPath != null && _audioLengthMs > _durationMs)
-            Row(
-              children: [
-                Text(s.lvSongStart),
-                Expanded(
-                  child: Slider(
-                    value: _audioStartMs.toDouble(),
-                    max: (_audioLengthMs - _durationMs).toDouble(),
-                    onChanged: (v) {
-                      _pause();
-                      setState(() => _audioStartMs = v.round());
-                    },
-                  ),
-                ),
-                Text(_clock(_audioStartMs), textDirection: TextDirection.ltr),
-              ],
-            ),
+          if (_audioPath != null && _audioLengthMs > 1000) _songRange(s),
           const SizedBox(height: 6),
           Text(s.lvRights, style: Theme.of(context).textTheme.bodySmall),
         ],
       );
+
+  /// Start and end of the part of the song to use.
+  Widget _songRange(S s) {
+    final total = _audioLengthMs.toDouble();
+    final videoMs =
+        math.min(_info?.durationMs ?? 0, LyricVideoExporter.maxDurationMs);
+    final start = _audioStartMs.clamp(0, _audioLengthMs - 1000).toDouble();
+    final end = (_audioEndMs ?? (_audioStartMs + videoMs))
+        .clamp(start + 1000, total)
+        .toDouble();
+    void set(int a, int b) {
+      _pause(to: 0);
+      setState(() {
+        _audioStartMs = a;
+        _audioEndMs = b;
+      });
+    }
+
+    Widget nudge(IconData icon, VoidCallback onTap) => IconButton(
+          visualDensity: VisualDensity.compact,
+          onPressed: onTap,
+          icon: Icon(icon, size: 18),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 6),
+        Text(s.lvSongPart, style: Theme.of(context).textTheme.titleSmall),
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: RangeSlider(
+            values: RangeValues(start, end),
+            max: total,
+            onChanged: (v) {
+              // At most a minute, at least a second.
+              var a = v.start.round(), b = v.end.round();
+              if (b - a > LyricVideoExporter.maxDurationMs) {
+                if (a != start.round()) {
+                  b = a + LyricVideoExporter.maxDurationMs;
+                } else {
+                  a = b - LyricVideoExporter.maxDurationMs;
+                }
+              }
+              if (b - a < 1000) return;
+              set(a, b);
+            },
+          ),
+        ),
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            children: [
+              nudge(Icons.remove_rounded,
+                  () => set(math.max(0, start.round() - 500), end.round())),
+              Text(_clockFine(start.round())),
+              nudge(Icons.add_rounded, () {
+                if (end - start > 1500) set(start.round() + 500, end.round());
+              }),
+              const Spacer(),
+              Text('${s.lvPartLength} ${_clockFine((end - start).round())}'),
+              const Spacer(),
+              nudge(Icons.remove_rounded, () {
+                if (end - start > 1500) set(start.round(), end.round() - 500);
+              }),
+              Text(_clockFine(end.round())),
+              nudge(Icons.add_rounded,
+                  () => set(start.round(), math.min(total.round(), end.round() + 500))),
+            ],
+          ),
+        ),
+        Text(s.lvSongPartHint, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
 
   Widget _lyricsTab(S s) => ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),

@@ -79,6 +79,7 @@ class LyricVideoExporter {
   static Future<String> export({
     required String videoPath,
     required VideoInfo info,
+    int? durationMs,
     String? audioPath,
     int audioStartMs = 0,
     required List<LyricLine> lines,
@@ -89,7 +90,8 @@ class LyricVideoExporter {
     final stamp = DateTime.now().millisecondsSinceEpoch;
     final dir = await Directory('${tmp.path}/lyrics_$stamp').create();
     try {
-      final durationMs = info.durationMs.clamp(1, maxDurationMs);
+      final length =
+          (durationMs ?? info.durationMs).clamp(1, maxDurationMs).toInt();
       final (w, h) = VideoComposer.outputSize(info.width, info.height);
       final frames = await renderOverlay(
         dir: dir,
@@ -97,13 +99,13 @@ class LyricVideoExporter {
         height: h,
         lines: lines,
         style: style,
-        durationMs: durationMs,
+        durationMs: length,
         onProgress: onProgress,
       );
       final output = '${tmp.path}/StoryCraft_lyrics_$stamp.mp4';
       await VideoComposer.compose(
         videoPath: videoPath,
-        durationMs: durationMs,
+        durationMs: length,
         audioPath: audioPath,
         audioStartMs: audioStartMs,
         overlayDir: dir.path,

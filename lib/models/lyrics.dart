@@ -36,6 +36,14 @@ class LyricLine {
   /// When the line leaves the screen (automatic captions end at the last
   /// sung word); otherwise it stays until the next line.
   int? endMs;
+
+  Map<String, Object?> toJson() => {'t': text, 's': startMs, 'e': endMs};
+
+  factory LyricLine.fromJson(Map<String, Object?> j) => LyricLine(
+        j['t'] as String? ?? '',
+        (j['s'] as num?)?.toInt(),
+        (j['e'] as num?)?.toInt(),
+      );
 }
 
 /// A recognized word and its timing in the song excerpt.
@@ -95,6 +103,37 @@ class LyricsStyle {
 
   /// Small line under the lyrics (song · artist), always shown.
   final String credit;
+
+  Map<String, Object?> toJson() => {
+        'font': fontFamily,
+        'color': color.toARGB32(),
+        'accent': accent.toARGB32(),
+        'effect': effect.name,
+        'size': size,
+        'y': y,
+        'box': box,
+        'glow': glow,
+        'bold': bold,
+        'shade': shade,
+        'credit': credit,
+      };
+
+  factory LyricsStyle.fromJson(Map<String, Object?> j) {
+    const d = LyricsStyle.cinematic;
+    return LyricsStyle(
+      fontFamily: j['font'] as String? ?? d.fontFamily,
+      color: Color((j['color'] as num?)?.toInt() ?? d.color.toARGB32()),
+      accent: Color((j['accent'] as num?)?.toInt() ?? d.accent.toARGB32()),
+      effect: LyricEffect.values.asNameMap()[j['effect']] ?? d.effect,
+      size: (j['size'] as num?)?.toDouble() ?? d.size,
+      y: (j['y'] as num?)?.toDouble() ?? d.y,
+      box: j['box'] as bool? ?? d.box,
+      glow: j['glow'] as bool? ?? d.glow,
+      bold: j['bold'] as bool? ?? d.bold,
+      shade: j['shade'] as bool? ?? d.shade,
+      credit: j['credit'] as String? ?? '',
+    );
+  }
 
   LyricsStyle copyWith({
     String? fontFamily,

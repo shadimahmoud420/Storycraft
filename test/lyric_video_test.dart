@@ -94,6 +94,16 @@ void main() {
     expect(Lyrics.similarity('عيونك', 'عيونه'), greaterThan(0.7));
   });
 
+  test('project lyrics and style survive JSON (draft)', () {
+    final line = LyricLine.fromJson(LyricLine('سطر', 1200, 3400).toJson());
+    expect((line.text, line.startMs, line.endMs), ('سطر', 1200, 3400));
+    final style = LyricsStyle.cinematic.copyWith(
+        credit: 'X - Y', size: 30, effect: LyricEffect.words);
+    final back = LyricsStyle.fromJson(style.toJson());
+    expect(back.toJson(), style.toJson());
+    expect(LyricsStyle.fromJson(const {}).fontFamily, 'Aref Ruqaa');
+  });
+
   test('output size is capped and even', () {
     expect(VideoComposer.outputSize(3840, 2160), (1920, 1080));
     expect(VideoComposer.outputSize(2160, 3840), (1080, 1920));

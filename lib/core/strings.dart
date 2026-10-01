@@ -125,6 +125,13 @@ class S {
   String get lvSaved => _t('lvSaved');
   String get lvFailed => _t('lvFailed');
   String get lvTooLong => _t('lvTooLong');
+  String get lvSongPart => _t('lvSongPart');
+  String get lvSongPartHint => _t('lvSongPartHint');
+  String get lvPartLength => _t('lvPartLength');
+  String get lvRestored => _t('lvRestored');
+  String get lvNewProject => _t('lvNewProject');
+  String get lvNewProjectAsk => _t('lvNewProjectAsk');
+  String get lvAutosave => _t('lvAutosave');
   String get lvAutoSync => _t('lvAutoSync');
   String get lvAligned => _t('lvAligned');
   String get lvTipPaste => _t('lvTipPaste');
@@ -422,6 +429,13 @@ class S {
       'lvSaved': 'تم حفظ الفيديو في المعرض',
       'lvFailed': 'تعذّر تصدير الفيديو',
       'lvTooLong': 'سيُستخدم أول ٦٠ ثانية من الفيديو',
+      'lvSongPart': 'المقطع المختار',
+      'lvSongPartHint': 'اسحب الطرفين لاختيار بداية ونهاية المقطع من الأغنية',
+      'lvPartLength': 'المدة',
+      'lvRestored': 'تم استرجاع مشروعك المحفوظ',
+      'lvNewProject': 'مشروع جديد',
+      'lvNewProjectAsk': 'سيتم حذف المشروع الحالي والبدء من جديد. متابعة؟',
+      'lvAutosave': 'يُحفظ مشروعك تلقائيًا',
       'lvAutoSync': 'مزامنة تلقائية للكلمات',
       'lvAligned': 'تمت مزامنة {n} من {t} سطر تلقائيًا ✓',
       'lvTipPaste': 'للحصول على كلمات صحيحة ١٠٠٪: الصق كلمات الأغنية أولًا من «كتابة الكلمات»، ثم اضغط المزامنة التلقائية ليضبط التطبيق توقيتها فقط.',
@@ -713,6 +727,13 @@ class S {
       'lvSaved': 'Video saved to your gallery',
       'lvFailed': 'Could not export the video',
       'lvTooLong': 'The first 60 seconds will be used',
+      'lvSongPart': 'Selected part',
+      'lvSongPartHint': 'Drag both ends to choose where the part starts and ends',
+      'lvPartLength': 'Length',
+      'lvRestored': 'Your saved project was restored',
+      'lvNewProject': 'New project',
+      'lvNewProjectAsk': 'The current project will be deleted to start over. Continue?',
+      'lvAutosave': 'Your project is saved automatically',
       'lvAutoSync': 'Sync my lyrics automatically',
       'lvAligned': '{n} of {t} lines synced automatically ✓',
       'lvTipPaste': 'For 100% correct lyrics: paste the song’s lyrics first in “Write lyrics”, then tap automatic sync — the app only times them.',
