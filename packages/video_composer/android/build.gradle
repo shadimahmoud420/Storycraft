@@ -1,0 +1,27 @@
+group = "com.storycraft.video_composer"
+version = "1.0"
+
+apply plugin: "com.android.library"
+
+android {
+    namespace = "com.storycraft.video_composer"
+    compileSdk = 35
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    defaultConfig {
+        minSdk = 24
+    }
+}
+
+dependencies {
+    // Media3 Transformer: decode, apply effects, mix audio, encode MP4.
+    implementation("androidx.media3:media3-transformer:1.5.1")
+    implementation("androidx.media3:media3-effect:1.5.1")
+    implementation("androidx.media3:media3-common:1.5.1")
+    implementation("com.google.guava:guava:33.3.1-android")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
+}

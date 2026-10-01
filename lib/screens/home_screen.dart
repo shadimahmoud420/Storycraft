@@ -21,6 +21,7 @@ import '../widgets/settings_sheet.dart';
 import '../widgets/story_view.dart';
 import 'camera_screen.dart';
 import 'daily_screen.dart';
+import 'lyric_video_screen.dart';
 import 'brand_kit_screen.dart';
 import 'signature_screen.dart';
 import 'editor_screen.dart';
@@ -259,6 +260,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const CameraScreen()),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _StartCard(
+                      icon: Icons.queue_music_rounded,
+                      title: s.lvTitle,
+                      subtitle: s.lvHint,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF0F2027), Color(0xFFE94057)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const LyricVideoScreen()),
                       ),
                     ),
                     const SizedBox(height: 20),

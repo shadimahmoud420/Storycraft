@@ -89,6 +89,42 @@ class S {
   String get cameraUnavailable => _t('cameraUnavailable');
   String get retake => _t('retake');
   String get saveFull => _t('saveFull');
+  String get lvTitle => _t('lvTitle');
+  String get lvHint => _t('lvHint');
+  String get lvPickVideo => _t('lvPickVideo');
+  String get lvPickVideoHint => _t('lvPickVideoHint');
+  String get lvSong => _t('lvSong');
+  String get lvPickSong => _t('lvPickSong');
+  String get lvSongStart => _t('lvSongStart');
+  String get lvRights => _t('lvRights');
+  String get lvRemoveSong => _t('lvRemoveSong');
+  String get lvLyrics => _t('lvLyrics');
+  String get lvWriteLyrics => _t('lvWriteLyrics');
+  String get lvLyricsHint => _t('lvLyricsHint');
+  String get lvSync => _t('lvSync');
+  String get lvSyncHint => _t('lvSyncHint');
+  String get lvNext => _t('lvNext');
+  String get lvSynced => _t('lvSynced');
+  String get lvNoLyrics => _t('lvNoLyrics');
+  String get lvEffect => _t('lvEffect');
+  String get lvLook => _t('lvLook');
+  String get lvFade => _t('lvFade');
+  String get lvKaraoke => _t('lvKaraoke');
+  String get lvWipe => _t('lvWipe');
+  String get lvWords => _t('lvWords');
+  String get lvZoom => _t('lvZoom');
+  String get lvSlide => _t('lvSlide');
+  String get lvBox => _t('lvBox');
+  String get lvGlow => _t('lvGlow');
+  String get lvPosition => _t('lvPosition');
+  String get lvSize => _t('lvSize');
+  String get lvExport => _t('lvExport');
+  String get lvPreparing => _t('lvPreparing');
+  String get lvComposing => _t('lvComposing');
+  String get lvReady => _t('lvReady');
+  String get lvSaved => _t('lvSaved');
+  String get lvFailed => _t('lvFailed');
+  String get lvTooLong => _t('lvTooLong');
   String get designStory => _t('designStory');
   String get strength => _t('strength');
   String get timer => _t('timer');
@@ -331,6 +367,42 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
+      'lvTitle': 'فيديو بأغنية',
+      'lvHint': 'فيديو بدون صوت + أغنيتك + كلماتها بمؤثرات',
+      'lvPickVideo': 'اختر فيديو',
+      'lvPickVideoHint': 'سيُحذف صوت الفيديو الأصلي، ثم تضيف أغنيتك وكلماتها',
+      'lvSong': 'الأغنية',
+      'lvPickSong': 'اختر ملفًا صوتيًا',
+      'lvSongStart': 'بداية المقطع',
+      'lvRights': 'استخدم مقاطع تملك حق استخدامها. يمكنك أيضًا التصدير بدون أغنية ثم إضافتها من ملصق الموسيقى في إنستغرام.',
+      'lvRemoveSong': 'إزالة الأغنية',
+      'lvLyrics': 'الكلمات',
+      'lvWriteLyrics': 'كتابة الكلمات',
+      'lvLyricsHint': 'اكتب أو الصق الكلمات، كل سطر في سطر',
+      'lvSync': 'مزامنة مع الأغنية',
+      'lvSyncHint': 'اضغط «التالي» لحظة بداية كل سطر',
+      'lvNext': 'التالي',
+      'lvSynced': 'تمت المزامنة ✓',
+      'lvNoLyrics': 'لم تُكتب كلمات بعد',
+      'lvEffect': 'المؤثر',
+      'lvLook': 'الشكل',
+      'lvFade': 'ظهور',
+      'lvKaraoke': 'كاريوكي',
+      'lvWipe': 'كتابة',
+      'lvWords': 'كلمة كلمة',
+      'lvZoom': 'تكبير',
+      'lvSlide': 'انزلاق',
+      'lvBox': 'خلفية للنص',
+      'lvGlow': 'توهج',
+      'lvPosition': 'الموضع',
+      'lvSize': 'الحجم',
+      'lvExport': 'تصدير الفيديو',
+      'lvPreparing': 'تجهيز الكلمات…',
+      'lvComposing': 'دمج الفيديو والأغنية…',
+      'lvReady': 'الفيديو جاهز 🎬',
+      'lvSaved': 'تم حفظ الفيديو في المعرض',
+      'lvFailed': 'تعذّر تصدير الفيديو',
+      'lvTooLong': 'سيُستخدم أول ٦٠ ثانية من الفيديو',
       'designStory': 'صمّم ستوري',
       'strength': 'الدرجة',
       'timer': 'المؤقت',
@@ -567,6 +639,42 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
+      'lvTitle': 'Song video',
+      'lvHint': 'Silent video + your song + animated lyrics',
+      'lvPickVideo': 'Pick a video',
+      'lvPickVideoHint': 'The video’s own sound is removed; then add your song and its lyrics',
+      'lvSong': 'Song',
+      'lvPickSong': 'Choose an audio file',
+      'lvSongStart': 'Start at',
+      'lvRights': 'Use audio you have the right to use. You can also export without a song and add it with Instagram’s music sticker.',
+      'lvRemoveSong': 'Remove song',
+      'lvLyrics': 'Lyrics',
+      'lvWriteLyrics': 'Write lyrics',
+      'lvLyricsHint': 'Type or paste the lyrics, one per line',
+      'lvSync': 'Sync with the song',
+      'lvSyncHint': 'Tap “Next” the moment each line starts',
+      'lvNext': 'Next',
+      'lvSynced': 'Synced ✓',
+      'lvNoLyrics': 'No lyrics yet',
+      'lvEffect': 'Effect',
+      'lvLook': 'Look',
+      'lvFade': 'Fade',
+      'lvKaraoke': 'Karaoke',
+      'lvWipe': 'Write-on',
+      'lvWords': 'Word by word',
+      'lvZoom': 'Pop',
+      'lvSlide': 'Slide',
+      'lvBox': 'Text box',
+      'lvGlow': 'Glow',
+      'lvPosition': 'Position',
+      'lvSize': 'Size',
+      'lvExport': 'Export video',
+      'lvPreparing': 'Preparing the lyrics…',
+      'lvComposing': 'Merging video and song…',
+      'lvReady': 'Your video is ready 🎬',
+      'lvSaved': 'Video saved to your gallery',
+      'lvFailed': 'Could not export the video',
+      'lvTooLong': 'The first 60 seconds will be used',
       'designStory': 'Design a story',
       'strength': 'Strength',
       'timer': 'Timer',

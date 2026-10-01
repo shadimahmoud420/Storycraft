@@ -1,0 +1,21 @@
+name: video_composer
+description: Combines a video, a music track and a transparent overlay animation into an MP4 (AVFoundation on iOS, Media3 on Android).
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.storycraft.video_composer
+        pluginClass: VideoComposerPlugin
+      ios:
+        pluginClass: VideoComposerPlugin
