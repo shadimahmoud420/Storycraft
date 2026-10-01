@@ -9,12 +9,12 @@ import '../core/strings.dart';
 import '../data/filters.dart';
 import '../models/story_background.dart';
 import '../services/image_processing.dart';
+import '../services/skin_cleanup.dart';
 import 'editor_screen.dart';
 
 /// Filters offered in the camera, in order.
 const cameraFilters = [
   PhotoFilter.none,
-  PhotoFilter.glow,
   PhotoFilter.food,
   PhotoFilter.nature,
   PhotoFilter.vivid,
@@ -37,6 +37,16 @@ String filterLabel(S s, PhotoFilter f) => switch (f) {
       PhotoFilter.fade => s.fFade,
       PhotoFilter.drama => s.fDrama,
       PhotoFilter.rose => s.fRose,
+    };
+
+/// Skin cleanup levels offered (0 = off).
+const cleanupLevels = [0.0, 0.4, 0.7, 1.0];
+
+String cleanupLabel(S s, double level) => switch (cleanupLevels.indexOf(level)) {
+      1 => s.scLight,
+      2 => s.scMedium,
+      3 => s.scStrong,
+      _ => s.scOff,
     };
 
 /// Default strength per filter (Glow's colors are best a little softer).
@@ -72,6 +82,9 @@ class _CameraScreenState extends State<CameraScreen>
   double _strength = 0.85;
   FlashMode _flash = FlashMode.off;
   int _timer = 0; // seconds
+
+  /// Skin cleanup applied after the shot (0 = off).
+  double _cleanup = 0;
   bool _grid = false;
   double _zoom = 1, _minZoom = 1, _maxZoom = 1, _baseZoom = 1;
   Offset? _focus;
@@ -216,6 +229,7 @@ class _CameraScreenState extends State<CameraScreen>
             bytes: bytes,
             filter: _filter,
             strength: _strength,
+            cleanup: _cleanup,
           ),
         ),
       );
@@ -273,6 +287,15 @@ class _CameraScreenState extends State<CameraScreen>
                     icon: Icon(Icons.timer_outlined,
                         color: _timer > 0 ? Colors.amber : Colors.white),
                     label: Text(_timer > 0 ? '${_timer}s' : '',
+                        style: const TextStyle(color: Colors.amber)),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _cleanup = cleanupLevels[
+                        (cleanupLevels.indexOf(_cleanup) + 1) %
+                            cleanupLevels.length]),
+                    icon: Icon(Icons.face_retouching_natural_rounded,
+                        color: _cleanup > 0 ? Colors.amber : Colors.white),
+                    label: Text(_cleanup > 0 ? cleanupLabel(s, _cleanup) : '',
                         style: const TextStyle(color: Colors.amber)),
                   ),
                   IconButton(
@@ -357,6 +380,14 @@ class _CameraScreenState extends State<CameraScreen>
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
+                                ),
+                              if (_cleanup > 0)
+                                Positioned(
+                                  top: 12,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                      child: _Pill('✨ ${s.scAfterShot}')),
                                 ),
                               if (_zoom > _minZoom + 0.05)
                                 Positioned(
@@ -549,11 +580,13 @@ class _ReviewScreen extends StatefulWidget {
     required this.bytes,
     required this.filter,
     required this.strength,
+    this.cleanup = 0,
   });
 
   final Uint8List bytes;
   final PhotoFilter filter;
   final double strength;
+  final double cleanup;
 
   @override
   State<_ReviewScreen> createState() => _ReviewScreenState();
@@ -563,6 +596,40 @@ class _ReviewScreenState extends State<_ReviewScreen> {
   late PhotoFilter _filter = widget.filter;
   late double _strength = widget.strength;
   bool _busy = false;
+
+  /// Skin cleanup level and its results (always made from the original).
+  late double _cleanup = widget.cleanup;
+  final _cleaned = <double, Uint8List>{};
+  bool _cleaning = false;
+
+  /// The photo shown and used: the original or its cleaned copy.
+  Uint8List get _bytes => _cleaned[_cleanup] ?? widget.bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_cleanup > 0) _setCleanup(_cleanup);
+  }
+
+  Future<void> _setCleanup(double level) async {
+    setState(() => _cleanup = level);
+    if (level == 0 || _cleaned.containsKey(level)) return;
+    setState(() => _cleaning = true);
+    try {
+      final out = await SkinCleanup.apply(widget.bytes, level);
+      if (!mounted) return;
+      if (out == null) {
+        _toast(S.of(context).scNoFace);
+        setState(() => _cleanup = 0);
+      } else {
+        setState(() => _cleaned[level] = out);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _cleanup = 0);
+    } finally {
+      if (mounted) setState(() => _cleaning = false);
+    }
+  }
 
   void _toast(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
@@ -575,11 +642,11 @@ class _ReviewScreenState extends State<_ReviewScreen> {
         if (mounted) _toast(s.saveFailed);
         return;
       }
-      // No filter: save the original file bit for bit.
+      // No filter: save the (cleaned) photo as is.
       final out = _filter == PhotoFilter.none
-          ? widget.bytes
+          ? _bytes
           : await ImageProcessing.applyLook(
-              widget.bytes,
+              _bytes,
               PhotoFilters.blended(_filter, _strength),
             );
       await Gal.putImageBytes(out,
@@ -595,7 +662,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
   Future<void> _design() async {
     setState(() => _busy = true);
     try {
-      final prepared = await ImageProcessing.prepareImport(widget.bytes);
+      final prepared = await ImageProcessing.prepareImport(_bytes);
       if (!mounted) return;
       // The filter stays live (non-destructive) in the editor.
       Navigator.pop(
@@ -628,7 +695,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                     child: filteredView(
                       _filter,
                       _strength,
-                      Image.memory(widget.bytes,
+                      Image.memory(_bytes,
                           fit: BoxFit.contain,
                           cacheWidth: 1440,
                           gaplessPlayback: true),
@@ -680,6 +747,45 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: Center(
+                      child: _cleaning
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.face_retouching_natural_rounded,
+                              color: Colors.white70, size: 20),
+                    ),
+                  ),
+                  Center(
+                    child: Text(_cleaning ? s.scWorking : s.scTitle,
+                        style: const TextStyle(color: Colors.white70)),
+                  ),
+                  const SizedBox(width: 8),
+                  for (final level in cleanupLevels)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 6),
+                      child: ChoiceChip(
+                        label: Text(cleanupLabel(s, level)),
+                        selected: _cleanup == level,
+                        onSelected: _cleaning || _busy
+                            ? null
+                            : (_) => _setCleanup(level),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
               child: Row(
@@ -693,7 +799,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                   ),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _busy ? null : _save,
+                      onPressed: _busy || _cleaning ? null : _save,
                       icon: const Icon(Icons.download_rounded,
                           color: Colors.white),
                       label: FittedBox(
@@ -704,7 +810,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                   ),
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: _busy ? null : _design,
+                      onPressed: _busy || _cleaning ? null : _design,
                       icon: _busy
                           ? const SizedBox(
                               width: 16,

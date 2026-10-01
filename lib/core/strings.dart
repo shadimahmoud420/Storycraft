@@ -89,6 +89,14 @@ class S {
   String get cameraUnavailable => _t('cameraUnavailable');
   String get retake => _t('retake');
   String get saveFull => _t('saveFull');
+  String get scTitle => _t('scTitle');
+  String get scOff => _t('scOff');
+  String get scLight => _t('scLight');
+  String get scMedium => _t('scMedium');
+  String get scStrong => _t('scStrong');
+  String get scAfterShot => _t('scAfterShot');
+  String get scWorking => _t('scWorking');
+  String get scNoFace => _t('scNoFace');
   String get lvTitle => _t('lvTitle');
   String get lvHint => _t('lvHint');
   String get lvPickVideo => _t('lvPickVideo');
@@ -403,6 +411,14 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
+      'scTitle': 'تنظيف البشرة',
+      'scOff': 'إيقاف',
+      'scLight': 'خفيف',
+      'scMedium': 'متوسط',
+      'scStrong': 'قوي',
+      'scAfterShot': 'تنظيف البشرة يُطبَّق بعد الالتقاط',
+      'scWorking': 'جارٍ تنظيف البشرة…',
+      'scNoFace': 'لم يُعثر على وجه واضح، بقيت الصورة كما هي',
       'lvTitle': 'فيديو بأغنية',
       'lvHint': 'فيديو بدون صوت + أغنيتك + كلماتها بمؤثرات',
       'lvPickVideo': 'اختر فيديو',
@@ -711,6 +727,14 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
+      'scTitle': 'Skin cleanup',
+      'scOff': 'Off',
+      'scLight': 'Light',
+      'scMedium': 'Medium',
+      'scStrong': 'Strong',
+      'scAfterShot': 'Skin cleanup is applied after the shot',
+      'scWorking': 'Cleaning up the skin…',
+      'scNoFace': 'No clear face found; the photo is unchanged',
       'lvTitle': 'Song video',
       'lvHint': 'Silent video + your song + animated lyrics',
       'lvPickVideo': 'Pick a video',

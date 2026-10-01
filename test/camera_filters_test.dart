@@ -49,8 +49,9 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(tester.takeException(), isNull);
-    expect(find.text('Glow'), findsOneWidget);
+    expect(find.text('Glow'), findsNothing); // replaced by skin cleanup
     expect(find.text('طعام'), findsOneWidget);
+    expect(find.byIcon(Icons.face_retouching_natural_rounded), findsOneWidget);
   });
 
   testWidgets('filtered view renders every look', (tester) async {
