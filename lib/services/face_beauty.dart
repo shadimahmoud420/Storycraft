@@ -219,9 +219,88 @@ Uint8List _applyFull((Uint8List, int, List<FaceLandmarks>, double) a) {
 void applyBeauty(
     RgbaImage image, List<FaceLandmarks> faces, double strength) {
   if (strength <= 0) return;
+  // How much of each pixel is smoothed skin (0 – 255): kept out of the
+  // sharpening so pores don't come back.
+  final skin = Uint8List(image.width * image.height);
   for (final face in faces) {
-    _smoothSkin(image, _FaceGeometry(face), strength);
+    _smoothSkin(image, _FaceGeometry(face), strength, skin);
   }
+  _crisp(image, skin, 0.5 + 0.5 * strength);
+}
+
+/// Sharpness and clarity everywhere except smoothed skin: crisp eyes,
+/// brows, lashes, beard, hair and background. Works on luminance only
+/// (no color fringes), with a small noise threshold.
+void _crisp(RgbaImage image, Uint8List skin, double amount) {
+  final w = image.width, h = image.height, d = image.data;
+  final n = w * h;
+  final lum = Uint8List(n);
+  for (var p = 0, i = 0; p < n; p++, i += 4) {
+    lum[p] = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+  }
+  // Fine detail scale grows with the photo (1 px at 2K, 2 px at 4K).
+  final int fr = math.max(1, (math.max(w, h) / 2400).round());
+  final fine = _blurLum(lum, w, h, fr);
+
+  // Clarity: local contrast against a wide blur, computed at 1/4 size.
+  final int q = 4;
+  final int qw = math.max(1, w ~/ q), qh = math.max(1, h ~/ q);
+  final small = Float32List(qw * qh);
+  for (var y = 0; y < qh; y++) {
+    for (var x = 0; x < qw; x++) {
+      small[y * qw + x] = lum[math.min(h - 1, y * q + 1) * w + math.min(w - 1, x * q + 1)]
+          .toDouble();
+    }
+  }
+  final wide = _blurF(small, qw, qh, math.max(2, math.max(qw, qh) ~/ 90), 3);
+
+  final sharpK = 0.9 * amount, clarityK = 0.22 * amount;
+  for (var y = 0; y < h; y++) {
+    final fy = y / q - 0.5;
+    for (var x = 0; x < w; x++) {
+      final p = y * w + x;
+      final keep = 1 - skin[p] / 255;
+      if (keep <= 0.01) continue;
+      final l = lum[p];
+      final detail = l - fine[p];
+      var dl = detail.abs() > 2 ? detail * sharpK : 0.0;
+      dl += (l - _sample(wide, qw, qh, x / q - 0.5, fy)) * clarityK;
+      dl *= keep;
+      if (dl.abs() < 0.5) continue;
+      final i = p * 4;
+      d[i] = (d[i] + dl).round().clamp(0, 255);
+      d[i + 1] = (d[i + 1] + dl).round().clamp(0, 255);
+      d[i + 2] = (d[i + 2] + dl).round().clamp(0, 255);
+    }
+  }
+}
+
+/// Box blur of a single-channel 8-bit image.
+Uint8List _blurLum(Uint8List src, int w, int h, int r) {
+  final tmp = Uint8List(src.length), out = Uint8List(src.length);
+  final div = 2 * r + 1;
+  for (var y = 0; y < h; y++) {
+    final row = y * w;
+    var sum = 0;
+    for (var k = -r; k <= r; k++) {
+      sum += src[row + k.clamp(0, w - 1)];
+    }
+    for (var x = 0; x < w; x++) {
+      tmp[row + x] = sum ~/ div;
+      sum += src[row + math.min(w - 1, x + r + 1)] - src[row + math.max(0, x - r)];
+    }
+  }
+  for (var x = 0; x < w; x++) {
+    var sum = 0;
+    for (var k = -r; k <= r; k++) {
+      sum += tmp[k.clamp(0, h - 1) * w + x];
+    }
+    for (var y = 0; y < h; y++) {
+      out[y * w + x] = sum ~/ div;
+      sum += tmp[math.min(h - 1, y + r + 1) * w + x] - tmp[math.max(0, y - r) * w + x];
+    }
+  }
+  return out;
 }
 
 /// Derived measurements of one face.
@@ -262,7 +341,8 @@ class _FaceGeometry {
 }
 
 /// Smooths skin inside the face only.
-void _smoothSkin(RgbaImage image, _FaceGeometry g, double strength) {
+void _smoothSkin(
+    RgbaImage image, _FaceGeometry g, double strength, Uint8List skin) {
   final w = image.width, h = image.height, d = image.data;
 
   // Work area: the face plus a margin, at a reduced "work" resolution for
@@ -399,6 +479,9 @@ void _smoothSkin(RgbaImage image, _FaceGeometry g, double strength) {
       final fx = (x - x0 + 0.5) / f - 0.5;
       final ms = _sample(skinMask, ww, wh, fx, fy);
       if (ms * skinK < 0.004) continue;
+      final sp = y * w + x;
+      final cover = (ms * 255 * math.min(1, strength * 2)).round();
+      if (cover > skin[sp]) skin[sp] = cover;
 
       final m = _sample(bm, ww, wh, fx, fy);
       if (m <= 0.02) continue;

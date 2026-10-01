@@ -109,10 +109,9 @@ void main() {
     // Cheek: much smoother.
     expect(_variance(after, 120, 260, 24),
         lessThan(_variance(before, 120, 260, 24) * 0.4));
-    // Background: bit for bit the same (no blur outside the face).
-    for (final (x, y) in [(20, 20), (380, 480), (40, 250), (360, 120)]) {
-      expect(_px(after, x, y), _px(before, x, y));
-    }
+    // Background: never blurred, only crisper.
+    expect(_variance(after, 10, 10, 40),
+        greaterThanOrEqualTo(_variance(before, 10, 10, 40)));
     // Dark hair inside the face outline is not treated as skin.
     expect(_variance(after, 180, 105, 16),
         greaterThan(_variance(before, 180, 105, 16) * 0.6));
@@ -124,10 +123,12 @@ void main() {
     final before = _portrait();
     final after = _portrait();
     applyBeauty(after, [_face], 1);
+    // Eyes are not brightened (only crisper), lip color is not changed.
     expect(_mean(after, 145, 216, 20, 8, 0),
-        closeTo(_mean(before, 145, 216, 20, 8, 0), 1));
-    expect(_mean(after, 185, 320, 30, 6, 0),
-        closeTo(_mean(before, 185, 320, 30, 6, 0), 1));
+        lessThanOrEqualTo(_mean(before, 145, 216, 20, 8, 0) + 1));
+    double redness(RgbaImage im) =>
+        _mean(im, 185, 320, 30, 6, 0) - _mean(im, 185, 320, 30, 6, 1);
+    expect(redness(after), closeTo(redness(before), 2));
     // Nostrils stay dark and in place.
     expect(_px(after, 186, 290).$1, lessThan(90));
     expect(_px(after, 214, 290).$1, lessThan(90));
