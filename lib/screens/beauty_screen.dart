@@ -7,28 +7,28 @@ import 'package:flutter/material.dart';
 import '../core/strings.dart';
 import '../services/face_beauty.dart';
 
-/// Result of the beauty studio: the retouched JPEG and the settings used
-/// (so reopening starts from them, always from the original photo).
-typedef BeautyResult = ({Uint8List bytes, BeautySettings settings});
+/// Result of skin smoothing: the JPEG and the strength used (so reopening
+/// starts from it, always from the original photo).
+typedef BeautyResult = ({Uint8List bytes, double strength});
 
-/// Face-only retouching with live preview: skin, eyes, lips and nose.
+/// Face-only skin smoothing with a strength slider and live preview.
 /// Press and hold the photo to compare with the original.
 class BeautyScreen extends StatefulWidget {
   const BeautyScreen({
     super.key,
     required this.imageBytes,
-    this.initial = BeautySettings.natural,
+    this.initial = FaceBeauty.defaultStrength,
   });
 
   final Uint8List imageBytes;
-  final BeautySettings initial;
+  final double initial;
 
   @override
   State<BeautyScreen> createState() => _BeautyScreenState();
 }
 
 class _BeautyScreenState extends State<BeautyScreen> {
-  late BeautySettings _settings = widget.initial;
+  late double _strength = widget.initial;
   BeautyPreview? _preview;
   ui.Image? _original;
   ui.Image? _shown;
@@ -88,7 +88,7 @@ class _BeautyScreenState extends State<BeautyScreen> {
     try {
       do {
         _pending = false;
-        final pixels = await FaceBeauty.render(p, _settings);
+        final pixels = await FaceBeauty.render(p, _strength);
         final image = await _toImage(pixels, p.width, p.height);
         if (!mounted) {
           image.dispose();
@@ -103,8 +103,8 @@ class _BeautyScreenState extends State<BeautyScreen> {
     }
   }
 
-  void _set(BeautySettings s) {
-    setState(() => _settings = s);
+  void _set(double v) {
+    setState(() => _strength = v);
     _render();
   }
 
@@ -113,10 +113,10 @@ class _BeautyScreenState extends State<BeautyScreen> {
     if (p == null) return;
     setState(() => _applying = true);
     try {
-      final bytes = await FaceBeauty.apply(widget.imageBytes, p, _settings);
+      final bytes = await FaceBeauty.apply(widget.imageBytes, p, _strength);
       if (mounted) {
         Navigator.pop<BeautyResult>(
-            context, (bytes: bytes, settings: _settings));
+            context, (bytes: bytes, strength: _strength));
       }
     } catch (_) {
       if (mounted) {
@@ -204,27 +204,9 @@ class _BeautyScreenState extends State<BeautyScreen> {
               const SizedBox(height: 4),
               _SliderRow(
                 icon: Icons.face_retouching_natural_rounded,
-                label: s.beautySkin,
-                value: _settings.skin,
-                onChanged: (v) => _set(_settings.copyWith(skin: v)),
-              ),
-              _SliderRow(
-                icon: Icons.remove_red_eye_rounded,
-                label: s.beautyEyes,
-                value: _settings.eyes,
-                onChanged: (v) => _set(_settings.copyWith(eyes: v)),
-              ),
-              _SliderRow(
-                icon: Icons.favorite_rounded,
-                label: s.beautyLips,
-                value: _settings.lips,
-                onChanged: (v) => _set(_settings.copyWith(lips: v)),
-              ),
-              _SliderRow(
-                icon: Icons.face_rounded,
-                label: s.beautyNose,
-                value: _settings.nose,
-                onChanged: (v) => _set(_settings.copyWith(nose: v)),
+                label: s.strength,
+                value: _strength,
+                onChanged: _set,
               ),
               const SizedBox(height: 8),
             ],
@@ -257,7 +239,7 @@ class _SliderRow extends StatelessWidget {
           Icon(icon, color: Colors.white70, size: 20),
           const SizedBox(width: 8),
           SizedBox(
-            width: 92,
+            width: 96,
             child: Text(label,
                 style: const TextStyle(color: Colors.white, fontSize: 13)),
           ),

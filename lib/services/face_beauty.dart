@@ -8,49 +8,6 @@ import 'image_processing.dart';
 
 typedef Pt = math.Point<double>;
 
-/// Strength of each face retouch, 0 – 1.
-@immutable
-class BeautySettings {
-  const BeautySettings({
-    this.skin = 0,
-    this.eyes = 0,
-    this.lips = 0,
-    this.nose = 0,
-  });
-
-  /// Light, natural defaults: smooth skin, a hint of sparkle, color and
-  /// slimming.
-  static const natural =
-      BeautySettings(skin: 0.6, eyes: 0.5, lips: 0.45, nose: 0.5);
-
-  final double skin;
-  final double eyes;
-  final double lips;
-  final double nose;
-
-  bool get isNone => skin <= 0 && eyes <= 0 && lips <= 0 && nose <= 0;
-
-  BeautySettings copyWith(
-          {double? skin, double? eyes, double? lips, double? nose}) =>
-      BeautySettings(
-        skin: skin ?? this.skin,
-        eyes: eyes ?? this.eyes,
-        lips: lips ?? this.lips,
-        nose: nose ?? this.nose,
-      );
-
-  @override
-  bool operator ==(Object other) =>
-      other is BeautySettings &&
-      other.skin == skin &&
-      other.eyes == eyes &&
-      other.lips == lips &&
-      other.nose == nose;
-
-  @override
-  int get hashCode => Object.hash(skin, eyes, lips, nose);
-}
-
 /// Face landmarks in image pixels (origin top left).
 @immutable
 class FaceLandmarks {
@@ -150,11 +107,14 @@ class BeautyPreview {
   final List<FaceLandmarks> faces;
 }
 
-/// Face-only retouching: skin smoothing, eye sparkle, lip color and nose
-/// slimming, guided by on-device face landmarks. The rest of the photo
-/// (hair, beard, background) stays untouched and sharp.
+/// Face-only skin smoothing, guided by on-device face landmarks. Eyes,
+/// brows, lips and the rest of the photo (hair, beard, background) stay
+/// untouched and sharp.
 class FaceBeauty {
   FaceBeauty._();
+
+  /// Default smoothing strength (0 – 1).
+  static const defaultStrength = 0.6;
 
   static const previewEdge = 1280;
 
@@ -191,17 +151,17 @@ class FaceBeauty {
   }
 
   /// The retouched preview as RGBA pixels.
-  static Future<Uint8List> render(BeautyPreview p, BeautySettings s) =>
-      compute(_renderPreview, (p.rgba, p.width, p.height, p.faces, s));
+  static Future<Uint8List> render(BeautyPreview p, double strength) =>
+      compute(_renderPreview, (p.rgba, p.width, p.height, p.faces, strength));
 
   /// Retouches the full-resolution photo; returns a JPEG.
   static Future<Uint8List> apply(
-          Uint8List bytes, BeautyPreview p, BeautySettings s) =>
-      compute(_applyFull, (bytes, p.width, p.faces, s));
+          Uint8List bytes, BeautyPreview p, double strength) =>
+      compute(_applyFull, (bytes, p.width, p.faces, strength));
 
   /// One step: detect and retouch at full resolution.
-  static Future<Uint8List> auto(Uint8List bytes, BeautySettings s) async =>
-      apply(bytes, await preview(bytes), s);
+  static Future<Uint8List> auto(Uint8List bytes, double strength) async =>
+      apply(bytes, await preview(bytes), strength);
 }
 
 typedef _Prepared = ({
@@ -238,13 +198,13 @@ _Prepared _preparePreview(Uint8List bytes) {
 }
 
 Uint8List _renderPreview(
-    (Uint8List, int, int, List<FaceLandmarks>, BeautySettings) a) {
+    (Uint8List, int, int, List<FaceLandmarks>, double) a) {
   final image = RgbaImage(a.$2, a.$3, Uint8List.fromList(a.$1));
   applyBeauty(image, a.$4, a.$5);
   return image.data;
 }
 
-Uint8List _applyFull((Uint8List, int, List<FaceLandmarks>, BeautySettings) a) {
+Uint8List _applyFull((Uint8List, int, List<FaceLandmarks>, double) a) {
   final image = RgbaImage.decode(a.$1, fullSize: true);
   final k = image.width / a.$2;
   applyBeauty(image, [for (final f in a.$3) f.scaled(k)], a.$4);
@@ -255,14 +215,12 @@ Uint8List _applyFull((Uint8List, int, List<FaceLandmarks>, BeautySettings) a) {
 // The retouch itself (public for unit tests).
 // ---------------------------------------------------------------------------
 
-/// Retouches every face in [image] in place.
+/// Smooths the skin of every face in [image] in place; [strength] 0 – 1.
 void applyBeauty(
-    RgbaImage image, List<FaceLandmarks> faces, BeautySettings s) {
-  if (s.isNone) return;
+    RgbaImage image, List<FaceLandmarks> faces, double strength) {
+  if (strength <= 0) return;
   for (final face in faces) {
-    final g = _FaceGeometry(face);
-    if (s.nose > 0) _slimNose(image, g, s.nose);
-    _retouch(image, g, s);
+    _smoothSkin(image, _FaceGeometry(face), strength);
   }
 }
 
@@ -276,7 +234,6 @@ class _FaceGeometry {
     final dx = eyeMid.x - mouth.x, dy = eyeMid.y - mouth.y;
     eyeToMouth = math.max(1, math.sqrt(dx * dx + dy * dy));
     up = Pt(dx / eyeToMouth, dy / eyeToMouth);
-    side = Pt(-up.y, up.x);
     eyeDist = math.max(1, eyeL.distanceTo(eyeR));
 
     // Outline: jaw/oval plus the forehead (brows lifted toward the
@@ -299,13 +256,13 @@ class _FaceGeometry {
   }
 
   final FaceLandmarks face;
-  late final Pt eyeL, eyeR, eyeMid, mouth, up, side;
+  late final Pt eyeL, eyeR, eyeMid, mouth, up;
   late final double eyeToMouth, eyeDist;
   late final List<Pt> outline;
 }
 
-/// Smooth skin, eye sparkle and lip color, inside the face only.
-void _retouch(RgbaImage image, _FaceGeometry g, BeautySettings s) {
+/// Smooths skin inside the face only.
+void _smoothSkin(RgbaImage image, _FaceGeometry g, double strength) {
   final w = image.width, h = image.height, d = image.data;
 
   // Work area: the face plus a margin, at a reduced "work" resolution for
@@ -426,160 +383,32 @@ void _retouch(RgbaImage image, _FaceGeometry g, BeautySettings s) {
   final bg = _blurF(pg, ww, wh, sr, 3);
   final bb = _blurF(pb, ww, wh, sr, 3);
 
-  final eyeMask = Float32List(n);
-  for (final eye in [g.face.leftEye, g.face.rightEye]) {
-    final m = _fill(toWork(_grow(_hull(eye), 1.08)), ww, wh);
-    for (var i = 0; i < n; i++) {
-      eyeMask[i] = math.max(eyeMask[i], m[i]);
-    }
-  }
-  final eyeSoft = _blurF(eyeMask, ww, wh, math.max(1, (eyeW * 0.025).round()), 2);
-
-  final lipMask = _fill(toWork(_star(g.face.outerLips)), ww, wh);
-  if (g.face.innerLips.length >= 3) {
-    final inner = _fill(toWork(_grow(_star(g.face.innerLips), 1.1)), ww, wh);
-    for (var i = 0; i < n; i++) {
-      lipMask[i] = math.max(0, lipMask[i] - inner[i]);
-    }
-  }
-  final lipSoft = _blurF(lipMask, ww, wh, math.max(1, (eyeW * 0.02).round()), 2);
-
   // Full-resolution pass over the face area.
-  final src = Uint8List.fromList(d);
-  final skinK = s.skin * 0.85;
+  final skinK = strength * 0.85;
   for (var y = y0; y < y1; y++) {
     final fy = (y - y0 + 0.5) / f - 0.5;
     for (var x = x0; x < x1; x++) {
       final fx = (x - x0 + 0.5) / f - 0.5;
       final ms = _sample(skinMask, ww, wh, fx, fy);
-      final me = s.eyes > 0 ? _sample(eyeSoft, ww, wh, fx, fy) : 0.0;
-      final ml = s.lips > 0 ? _sample(lipSoft, ww, wh, fx, fy) : 0.0;
-      if (ms * skinK < 0.004 && me < 0.004 && ml < 0.004) continue;
+      if (ms * skinK < 0.004) continue;
 
+      final m = _sample(bm, ww, wh, fx, fy);
+      if (m <= 0.02) continue;
       final i = (y * w + x) * 4;
-      var r = d[i].toDouble(), gg = d[i + 1].toDouble(), b = d[i + 2].toDouble();
+      final r = d[i].toDouble(), gr = d[i + 1].toDouble(), b = d[i + 2].toDouble();
+      final sr2 = _sample(br, ww, wh, fx, fy) / m;
+      final sg2 = _sample(bg, ww, wh, fx, fy) / m;
+      final sb2 = _sample(bb, ww, wh, fx, fy) / m;
 
-      // Skin: pull toward the smooth skin color where the difference is a
+      // Pull toward the smooth skin color where the difference is a
       // blemish or pore; strong detail (nostrils, moles, edges) stays.
-      if (ms * skinK >= 0.004) {
-        final m = _sample(bm, ww, wh, fx, fy);
-        if (m > 0.02) {
-          final sr2 = _sample(br, ww, wh, fx, fy) / m;
-          final sg2 = _sample(bg, ww, wh, fx, fy) / m;
-          final sb2 = _sample(bb, ww, wh, fx, fy) / m;
-          final diff = ((r - sr2) * 0.3 + (gg - sg2) * 0.59 + (b - sb2) * 0.11)
-              .abs();
-          final keep = 1 - _smooth(16, 50, diff);
-          final t = skinK * ms * keep;
-          r += (sr2 - r) * t;
-          gg += (sg2 - gg) * t;
-          b += (sb2 - b) * t;
-          // A soft, even glow.
-          final lift = s.skin * ms * 5;
-          r += lift;
-          gg += lift;
-          b += lift * 0.8;
-        }
-      }
-
-      // Eyes: crisper detail, brighter iris, whiter whites, livelier
-      // catchlights.
-      if (me >= 0.004) {
-        final k = me * s.eyes;
-        var mr = 0.0, mg = 0.0, mb = 0.0, c = 0;
-        for (var yy = math.max(0, y - 1); yy <= math.min(h - 1, y + 1); yy++) {
-          for (var xx = math.max(0, x - 1); xx <= math.min(w - 1, x + 1); xx++) {
-            final j = (yy * w + xx) * 4;
-            mr += src[j];
-            mg += src[j + 1];
-            mb += src[j + 2];
-            c++;
-          }
-        }
-        r += (src[i] - mr / c) * 1.1 * k;
-        gg += (src[i + 1] - mg / c) * 1.1 * k;
-        b += (src[i + 2] - mb / c) * 1.1 * k;
-        final l = r * 0.3 + gg * 0.59 + b * 0.11;
-        final whites = _smooth(105, 170, l);
-        // Desaturate the whites a little (less red), brighten everything.
-        r += (l - r) * whites * 0.35 * k;
-        gg += (l - gg) * whites * 0.35 * k;
-        b += (l - b) * whites * 0.35 * k;
-        final bright = 0.13 * k;
-        r += (255 - r) * bright;
-        gg += (255 - gg) * bright;
-        b += (255 - b) * bright;
-        final spark = _smooth(175, 235, l) * 30 * k;
-        r += spark;
-        gg += spark;
-        b += spark;
-      }
-
-      // Lips: richer, slightly rosier color.
-      if (ml >= 0.004) {
-        final k = ml * s.lips;
-        final l = r * 0.3 + gg * 0.59 + b * 0.11;
-        final sat = 1 + 0.5 * k;
-        r = l + (r - l) * sat + 4 * k;
-        gg = l + (gg - l) * sat - 2 * k;
-        b = l + (b - l) * sat + 2 * k;
-      }
-
-      d[i] = r.round().clamp(0, 255);
-      d[i + 1] = gg.round().clamp(0, 255);
-      d[i + 2] = b.round().clamp(0, 255);
-    }
-  }
-}
-
-/// Gently pulls the sides of the nose toward its center line (a local,
-/// smooth warp; nothing else moves).
-void _slimNose(RgbaImage image, _FaceGeometry g, double amount) {
-  final w = image.width, h = image.height, d = image.data;
-  final down = Pt(-g.up.x, -g.up.y);
-  final nose = g.face.nose.isNotEmpty ? g.face.nose : g.face.noseCrest;
-  if (nose.isEmpty) return;
-
-  // Nose bottom: the lowest nose point along the face axis.
-  var length = 0.0, minU = double.infinity, maxU = -double.infinity;
-  for (final p in nose) {
-    final vx = p.x - g.eyeMid.x, vy = p.y - g.eyeMid.y;
-    length = math.max(length, vx * down.x + vy * down.y);
-    final u = vx * g.side.x + vy * g.side.y;
-    minU = math.min(minU, u);
-    maxU = math.max(maxU, u);
-  }
-  length = length.clamp(g.eyeToMouth * 0.4, g.eyeToMouth * 0.85);
-  var width = maxU - minU;
-  width = width.clamp(g.eyeDist * 0.35, g.eyeDist * 0.8);
-  final center = _add(g.eyeMid, down, length * 0.8);
-  final cu = ((minU + maxU) / 2).clamp(-width / 2, width / 2);
-  final c = _add(center, g.side, g.face.nose.isNotEmpty ? cu : 0);
-
-  final rx = width * 1.0;
-  final ryUp = length * 0.75, ryDown = length * 0.45;
-  final s = 0.32 * amount;
-  final reach = math.max(rx, ryUp) + 2;
-  final int bx0 = math.max(0, (c.x - reach).floor());
-  final int by0 = math.max(0, (c.y - reach).floor());
-  final int bx1 = math.min(w - 1, (c.x + reach).ceil());
-  final int by1 = math.min(h - 1, (c.y + reach).ceil());
-  if (bx1 <= bx0 || by1 <= by0) return;
-  final src = Uint8List.fromList(d);
-
-  for (var y = by0; y <= by1; y++) {
-    for (var x = bx0; x <= bx1; x++) {
-      final vx = x - c.x, vy = y - c.y;
-      final u = vx * g.side.x + vy * g.side.y; // across the nose
-      final v = vx * down.x + vy * down.y; // along the nose
-      final ry = v < 0 ? ryUp : ryDown;
-      final r2 = (u / rx) * (u / rx) + (v / ry) * (v / ry);
-      if (r2 >= 1) continue;
-      final fall = (1 - r2) * (1 - r2);
-      final us = u * (1 + s * fall);
-      final sx = c.x + us * g.side.x + v * down.x;
-      final sy = c.y + us * g.side.y + v * down.y;
-      _bilinear(src, w, h, sx, sy, d, (y * w + x) * 4);
+      final diff = ((r - sr2) * 0.3 + (gr - sg2) * 0.59 + (b - sb2) * 0.11).abs();
+      final t = skinK * ms * (1 - _smooth(16, 50, diff));
+      // Plus a soft, even glow.
+      final lift = strength * ms * 5;
+      d[i] = (r + (sr2 - r) * t + lift).round().clamp(0, 255);
+      d[i + 1] = (gr + (sg2 - gr) * t + lift).round().clamp(0, 255);
+      d[i + 2] = (b + (sb2 - b) * t + lift * 0.8).round().clamp(0, 255);
     }
   }
 }
@@ -703,20 +532,6 @@ double _sample(Float32List g, int w, int h, double x, double y) {
   final top = g[iy * w + ix] + (g[iy * w + jx] - g[iy * w + ix]) * tx;
   final bot = g[jy * w + ix] + (g[jy * w + jx] - g[jy * w + ix]) * tx;
   return top + (bot - top) * ty;
-}
-
-void _bilinear(Uint8List src, int w, int h, double x, double y, Uint8List dst,
-    int o) {
-  final xc = x.clamp(0.0, w - 1.0), yc = y.clamp(0.0, h - 1.0);
-  final int ix = xc.floor(), iy = yc.floor();
-  final int jx = math.min(w - 1, ix + 1), jy = math.min(h - 1, iy + 1);
-  final tx = xc - ix, ty = yc - iy;
-  for (var c = 0; c < 3; c++) {
-    final a = src[(iy * w + ix) * 4 + c], b = src[(iy * w + jx) * 4 + c];
-    final e = src[(jy * w + ix) * 4 + c], f = src[(jy * w + jx) * 4 + c];
-    final top = a + (b - a) * tx, bot = e + (f - e) * tx;
-    dst[o + c] = (top + (bot - top) * ty).round().clamp(0, 255);
-  }
 }
 
 (double, double, double) _ycc(double r, double g, double b) => (

@@ -577,7 +577,9 @@ class _ReviewScreenState extends State<_ReviewScreen> {
 
   /// The photo shown and used: the capture, or its face-retouched copy.
   late Uint8List _bytes = widget.bytes;
-  BeautySettings? _beauty;
+
+  /// Skin smoothing strength applied to [_bytes], if any.
+  double? _beauty;
   bool _retouching = false;
 
   @override
@@ -586,18 +588,18 @@ class _ReviewScreenState extends State<_ReviewScreen> {
     if (_filter == PhotoFilter.glow) _autoRetouch();
   }
 
-  /// Glow retouches the face automatically (skin, eyes, lips, nose);
-  /// photos without a face simply keep Glow's colors.
+  /// Glow smooths the skin automatically, at the strength chosen in the
+  /// camera; photos without a face simply keep Glow's colors.
   Future<void> _autoRetouch() async {
     if (_beauty != null || _retouching) return;
     setState(() => _retouching = true);
     try {
-      const s = BeautySettings.natural;
-      final out = await FaceBeauty.auto(widget.bytes, s);
+      final strength = _strength;
+      final out = await FaceBeauty.auto(widget.bytes, strength);
       if (mounted && _beauty == null) {
         setState(() {
           _bytes = out;
-          _beauty = s;
+          _beauty = strength;
         });
       }
     } catch (_) {
@@ -607,20 +609,20 @@ class _ReviewScreenState extends State<_ReviewScreen> {
     }
   }
 
-  /// Fine-tune the retouch, always starting from the original capture.
+  /// Adjust the smoothing, always starting from the original capture.
   Future<void> _openBeauty() async {
     final result = await Navigator.of(context).push<BeautyResult>(
       MaterialPageRoute(
         builder: (_) => BeautyScreen(
           imageBytes: widget.bytes,
-          initial: _beauty ?? BeautySettings.natural,
+          initial: _beauty ?? FaceBeauty.defaultStrength,
         ),
       ),
     );
     if (result != null && mounted) {
       setState(() {
         _bytes = result.bytes;
-        _beauty = result.settings;
+        _beauty = result.strength;
       });
     }
   }
@@ -757,7 +759,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                 label: Text(_retouching
                     ? s.beautyWorking
                     : _beauty != null
-                        ? '${s.beauty} ✓'
+                        ? '${s.beauty} ${(_beauty! * 100).round()}%'
                         : s.beauty),
                 onPressed: _busy || _retouching ? null : _openBeauty,
               ),

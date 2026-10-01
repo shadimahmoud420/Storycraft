@@ -105,7 +105,7 @@ void main() {
   test('skin is smoothed; background and hair are untouched', () {
     final before = _portrait();
     final after = _portrait();
-    applyBeauty(after, [_face], const BeautySettings(skin: 1));
+    applyBeauty(after, [_face], 1);
     // Cheek: much smoother.
     expect(_variance(after, 120, 260, 24),
         lessThan(_variance(before, 120, 260, 24) * 0.4));
@@ -120,41 +120,22 @@ void main() {
     expect(_px(after, 155, 195).$1, lessThan(90));
   });
 
-  test('eyes brighten, lips gain color', () {
+  test('eyes, lips and the nose shape are left as they are', () {
     final before = _portrait();
     final after = _portrait();
-    applyBeauty(after, [_face], const BeautySettings(eyes: 1, lips: 1));
+    applyBeauty(after, [_face], 1);
     expect(_mean(after, 145, 216, 20, 8, 0),
-        greaterThan(_mean(before, 145, 216, 20, 8, 0) + 8));
-    double sat(RgbaImage im) =>
-        _mean(im, 185, 320, 30, 6, 0) - _mean(im, 185, 320, 30, 6, 1);
-    expect(sat(after), greaterThan(sat(before) * 1.2));
+        closeTo(_mean(before, 145, 216, 20, 8, 0), 1));
+    expect(_mean(after, 185, 320, 30, 6, 0),
+        closeTo(_mean(before, 185, 320, 30, 6, 0), 1));
+    // Nostrils stay dark and in place.
+    expect(_px(after, 186, 290).$1, lessThan(90));
+    expect(_px(after, 214, 290).$1, lessThan(90));
   });
 
-  test('nose slimming pulls the nostrils toward the center', () {
-    final after = _portrait();
-    applyBeauty(after, [_face], const BeautySettings(nose: 1));
-    // Darkest column of the left nostril moved right (toward x = 200).
-    int darkest(RgbaImage im) {
-      var best = 0, bestV = 999;
-      for (var x = 170; x < 200; x++) {
-        final v = _px(im, x, 290).$1;
-        if (v < bestV) {
-          bestV = v;
-          best = x;
-        }
-      }
-      return best;
-    }
-
-    expect(darkest(after), greaterThan(darkest(_portrait())));
-    // Far from the nose nothing moves.
-    expect(_px(after, 60, 400), _px(_portrait(), 60, 400));
-  });
-
-  test('zero settings change nothing', () {
+  test('zero strength changes nothing', () {
     final a = _portrait();
-    applyBeauty(a, [_face], const BeautySettings());
+    applyBeauty(a, [_face], 0);
     expect(a.data, _portrait().data);
   });
 
@@ -208,8 +189,8 @@ void main() {
             () => Future.delayed(const Duration(milliseconds: 500)));
         await tester.pump(const Duration(milliseconds: 100));
       }
-      expect(find.byType(Slider), findsNWidgets(4));
-      expect(find.text('تنقية البشرة'), findsOneWidget);
+      expect(find.byType(Slider), findsOneWidget);
+      expect(find.text('تنقية البشرة'), findsOneWidget); // title
       expect(find.byType(RawImage), findsOneWidget);
       await tester.tap(find.text('تطبيق'));
       for (var i = 0; i < 8 && result == null; i++) {
@@ -218,7 +199,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
       }
       expect(result, isNotNull);
-      expect(result!.settings, BeautySettings.natural);
+      expect(result!.strength, FaceBeauty.defaultStrength);
       expect(img.decodeJpg(result!.bytes)!.width, 400);
       expect(tester.takeException(), isNull);
     });

@@ -254,10 +254,6 @@ class S {
   String get rotateResize => _t('rotateResize');
   String get reset => _t('reset');
   String get beauty => _t('beauty');
-  String get beautySkin => _t('beautySkin');
-  String get beautyEyes => _t('beautyEyes');
-  String get beautyLips => _t('beautyLips');
-  String get beautyNose => _t('beautyNose');
   String get beautyHold => _t('beautyHold');
   String get beautyNoFace => _t('beautyNoFace');
   String get beautyUnsupported => _t('beautyUnsupported');
@@ -342,17 +338,13 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
-      'beauty': 'تجميل الوجه',
-      'beautySkin': 'تنقية البشرة',
-      'beautyEyes': 'لمعة العين',
-      'beautyLips': 'الشفاه',
-      'beautyNose': 'تصغير الأنف',
+      'beauty': 'تنقية البشرة',
       'beautyHold': 'اضغط مطولًا على الصورة لرؤية الأصل',
       'beautyNoFace': 'لم يتم العثور على وجه واضح في الصورة',
-      'beautyUnsupported': 'تجميل الوجه غير مدعوم على هذا الجهاز',
-      'beautyWorking': 'جارٍ تجميل الوجه…',
-      'beautyDone': 'تم تجميل الوجه ✨',
-      'beautyAfterShot': 'تجميل الوجه يُطبَّق بعد الالتقاط',
+      'beautyUnsupported': 'تنقية البشرة غير مدعومة على هذا الجهاز',
+      'beautyWorking': 'جارٍ تنقية البشرة…',
+      'beautyDone': 'تمت تنقية البشرة ✨',
+      'beautyAfterShot': 'تنقية البشرة تُطبَّق بعد الالتقاط',
       'apply': 'تطبيق',
       'designStory': 'صمّم ستوري',
       'strength': 'الدرجة',
@@ -589,17 +581,13 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
-      'beauty': 'Face retouch',
-      'beautySkin': 'Smooth skin',
-      'beautyEyes': 'Eye sparkle',
-      'beautyLips': 'Lips',
-      'beautyNose': 'Slim nose',
+      'beauty': 'Skin smoothing',
       'beautyHold': 'Press and hold the photo to see the original',
       'beautyNoFace': 'No clear face found in the photo',
-      'beautyUnsupported': 'Face retouch is not supported on this device',
-      'beautyWorking': 'Retouching the face…',
-      'beautyDone': 'Face retouched ✨',
-      'beautyAfterShot': 'Face retouch is applied after the shot',
+      'beautyUnsupported': 'Skin smoothing is not supported on this device',
+      'beautyWorking': 'Smoothing skin…',
+      'beautyDone': 'Skin smoothed ✨',
+      'beautyAfterShot': 'Skin smoothing is applied after the shot',
       'apply': 'Apply',
       'designStory': 'Design a story',
       'strength': 'Strength',
