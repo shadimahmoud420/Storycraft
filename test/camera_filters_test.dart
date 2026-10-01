@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,26 +6,12 @@ import 'package:storycraft/data/filters.dart';
 import 'package:storycraft/screens/camera_screen.dart';
 import 'package:storycraft/services/image_processing.dart';
 
-double _variance(RgbaImage im, int x0, int y0, int size) {
-  final values = <int>[];
-  for (var y = y0; y < y0 + size; y++) {
-    for (var x = x0; x < x0 + size; x++) {
-      values.add(im.data[(y * im.width + x) * 4]);
-    }
-  }
-  final mean = values.reduce((a, b) => a + b) / values.length;
-  return values.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
-      values.length;
-}
-
 void main() {
-  test('new looks exist and only Glow adds the soft blur', () {
+  test('new looks exist', () {
     for (final f in [PhotoFilter.glow, PhotoFilter.food, PhotoFilter.nature]) {
       expect(PhotoFilters.matrixOf(f), hasLength(20));
       expect(PhotoFilters.blended(f, 0), PhotoFilters.identity);
     }
-    expect(PhotoFilters.glowOf(PhotoFilter.glow, 0.7), 0.7);
-    expect(PhotoFilters.glowOf(PhotoFilter.food, 0.7), 0);
   });
 
   test('food boosts warm colors, nature boosts greens', () {
@@ -43,34 +27,11 @@ void main() {
         greaterThan(leaf[1] - leaf[0])); // greener
   });
 
-  test('glow smooths flat skin-like areas but keeps edges sharp', () {
-    // Left half: noisy "skin"; right half: dark; a hard edge between them.
-    final rnd = math.Random(1);
-    final im = img.Image(width: 400, height: 300, numChannels: 4);
-    for (final p in im) {
-      if (p.x < 200) {
-        final v = 190 + rnd.nextInt(24) - 12;
-        p..r = v..g = v - 30..b = v - 50..a = 255;
-      } else {
-        p..r = 30..g = 30..b = 30..a = 255;
-      }
-    }
-    final rgba = RgbaImage.decode(img.encodePng(im), fullSize: true);
-    final noiseBefore = _variance(rgba, 40, 100, 60);
-    applyGlow(rgba, 1);
-    expect(_variance(rgba, 40, 100, 60), lessThan(noiseBefore * 0.6));
-    // Across the edge the contrast is still strong.
-    final left = rgba.data[(150 * 400 + 194) * 4];
-    final right = rgba.data[(150 * 400 + 206) * 4];
-    expect(left - right, greaterThan(120));
-  });
-
   test('applyLook keeps the full camera resolution', () async {
     final im = img.Image(width: 1600, height: 2844); // > 2400 long edge
     final out = await ImageProcessing.applyLook(
       img.encodeJpg(im),
       PhotoFilters.blended(PhotoFilter.food, 0.8),
-      0,
     );
     final decoded = img.decodeJpg(out)!;
     expect(decoded.width, 1600);

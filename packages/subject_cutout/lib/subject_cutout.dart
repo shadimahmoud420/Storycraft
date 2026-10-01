@@ -55,4 +55,37 @@ class SubjectCutout {
       });
     }
   }
+
+  /// Face landmarks of every face found (Android: the most prominent face),
+  /// in pixels of the upright image. Each face maps a region name
+  /// (`bounds`, `contour`, `leftEye`, `rightEye`, `leftBrow`, `rightBrow`,
+  /// `outerLips`, `innerLips`, `nose`, `noseCrest`) to a flat
+  /// `[x0, y0, x1, y1, ...]` list (`bounds` is `[left, top, width, height]`).
+  /// Send an image without EXIF rotation. Throws [CutoutException].
+  static Future<List<Map<String, List<double>>>> detectFaces(
+      Uint8List imageBytes) async {
+    try {
+      final out = await _channel.invokeMethod<List<Object?>>(
+        'detectFaces',
+        {'image': imageBytes},
+      );
+      return [
+        for (final face in out ?? const [])
+          {
+            for (final e in (face as Map).entries)
+              e.key as String: [
+                for (final v in e.value as List) (v as num).toDouble(),
+              ],
+          },
+      ];
+    } on MissingPluginException {
+      throw const CutoutException(CutoutError.unsupported);
+    } on PlatformException catch (e) {
+      throw CutoutException(switch (e.code) {
+        'unsupported' => CutoutError.unsupported,
+        'preparing' => CutoutError.preparing,
+        _ => CutoutError.failed,
+      });
+    }
+  }
 }

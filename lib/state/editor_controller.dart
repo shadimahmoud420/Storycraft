@@ -190,6 +190,16 @@ class EditorController extends ChangeNotifier {
     }
   }
 
+  /// Replaces the background photo with an edited copy (e.g. a face
+  /// retouch); one undo step, and "original" still restores the photo.
+  void replaceBackgroundImage(Uint8List bytes) {
+    if (!_background.isImage) return;
+    checkpoint();
+    _background = _background.withImage(bytes);
+    _dirty = true;
+    notifyListeners();
+  }
+
   // --- Background removal ---------------------------------------------------
 
   /// Cuts the subject out of the photo background automatically (people,

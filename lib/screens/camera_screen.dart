@@ -8,8 +8,9 @@ import 'package:gal/gal.dart';
 import '../core/strings.dart';
 import '../data/filters.dart';
 import '../models/story_background.dart';
+import '../services/face_beauty.dart';
 import '../services/image_processing.dart';
-import '../widgets/glow_effect.dart';
+import 'beauty_screen.dart';
 import 'editor_screen.dart';
 
 /// Filters offered in the camera, in order.
@@ -40,25 +41,19 @@ String filterLabel(S s, PhotoFilter f) => switch (f) {
       PhotoFilter.rose => s.fRose,
     };
 
-/// Default strength per filter (Glow is best a little softer).
+/// Default strength per filter (Glow's colors are best a little softer).
 double defaultStrength(PhotoFilter f) => f == PhotoFilter.glow ? 0.6 : 0.85;
 
-/// [child] with a filter look: color matrix plus the soft glow.
-Widget filteredView(PhotoFilter f, double strength, Widget child,
-    {double glowSigma = 6}) {
-  final view = f == PhotoFilter.none
-      ? child
-      : ColorFiltered(
-          colorFilter:
-              ColorFilter.matrix(PhotoFilters.blended(f, strength)),
-          child: child,
-        );
-  return GlowEffect(
-    amount: PhotoFilters.glowOf(f, strength),
-    sigma: glowSigma,
-    child: view,
-  );
-}
+/// [child] with a filter's colors. Nothing is blurred: Glow's face
+/// retouch is applied to the photo itself, on the face only.
+Widget filteredView(PhotoFilter f, double strength, Widget child) =>
+    f == PhotoFilter.none
+        ? child
+        : ColorFiltered(
+            colorFilter:
+                ColorFilter.matrix(PhotoFilters.blended(f, strength)),
+            child: child,
+          );
 
 /// Professional camera: 4K capture (best available on older phones),
 /// live filters with strength, flash, timer, grid, zoom and tap-to-focus.
@@ -366,6 +361,14 @@ class _CameraScreenState extends State<CameraScreen>
                                     ),
                                   ),
                                 ),
+                              if (_filter == PhotoFilter.glow)
+                                Positioned(
+                                  top: 12,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                      child: _Pill('✨ ${s.beautyAfterShot}')),
+                                ),
                               if (_zoom > _minZoom + 0.05)
                                 Positioned(
                                   bottom: 12,
@@ -572,6 +575,56 @@ class _ReviewScreenState extends State<_ReviewScreen> {
   late double _strength = widget.strength;
   bool _busy = false;
 
+  /// The photo shown and used: the capture, or its face-retouched copy.
+  late Uint8List _bytes = widget.bytes;
+  BeautySettings? _beauty;
+  bool _retouching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_filter == PhotoFilter.glow) _autoRetouch();
+  }
+
+  /// Glow retouches the face automatically (skin, eyes, lips, nose);
+  /// photos without a face simply keep Glow's colors.
+  Future<void> _autoRetouch() async {
+    if (_beauty != null || _retouching) return;
+    setState(() => _retouching = true);
+    try {
+      const s = BeautySettings.natural;
+      final out = await FaceBeauty.auto(widget.bytes, s);
+      if (mounted && _beauty == null) {
+        setState(() {
+          _bytes = out;
+          _beauty = s;
+        });
+      }
+    } catch (_) {
+      // No face (or unsupported): nothing to retouch.
+    } finally {
+      if (mounted) setState(() => _retouching = false);
+    }
+  }
+
+  /// Fine-tune the retouch, always starting from the original capture.
+  Future<void> _openBeauty() async {
+    final result = await Navigator.of(context).push<BeautyResult>(
+      MaterialPageRoute(
+        builder: (_) => BeautyScreen(
+          imageBytes: widget.bytes,
+          initial: _beauty ?? BeautySettings.natural,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _bytes = result.bytes;
+        _beauty = result.settings;
+      });
+    }
+  }
+
   void _toast(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
@@ -583,13 +636,12 @@ class _ReviewScreenState extends State<_ReviewScreen> {
         if (mounted) _toast(s.saveFailed);
         return;
       }
-      // Untouched photo: save the original file bit for bit.
+      // No filter: save the (retouched) photo as is.
       final out = _filter == PhotoFilter.none
-          ? widget.bytes
+          ? _bytes
           : await ImageProcessing.applyLook(
-              widget.bytes,
+              _bytes,
               PhotoFilters.blended(_filter, _strength),
-              PhotoFilters.glowOf(_filter, _strength),
             );
       await Gal.putImageBytes(out,
           name: 'StoryCraft_${DateTime.now().millisecondsSinceEpoch}');
@@ -604,7 +656,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
   Future<void> _design() async {
     setState(() => _busy = true);
     try {
-      final prepared = await ImageProcessing.prepareImport(widget.bytes);
+      final prepared = await ImageProcessing.prepareImport(_bytes);
       if (!mounted) return;
       // The filter stays live (non-destructive) in the editor.
       Navigator.pop(
@@ -637,8 +689,10 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                     child: filteredView(
                       _filter,
                       _strength,
-                      Image.memory(widget.bytes,
-                          fit: BoxFit.contain, cacheWidth: 1440),
+                      Image.memory(_bytes,
+                          fit: BoxFit.contain,
+                          cacheWidth: 1440,
+                          gaplessPlayback: true),
                     ),
                   ),
                 ),
@@ -678,17 +732,38 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                       child: ChoiceChip(
                         label: Text(filterLabel(s, f)),
                         selected: _filter == f,
-                        onSelected: (_) => setState(() {
-                          _filter = f;
-                          _strength = defaultStrength(f);
-                        }),
+                        onSelected: (_) {
+                          setState(() {
+                            _filter = f;
+                            _strength = defaultStrength(f);
+                          });
+                          if (f == PhotoFilter.glow) _autoRetouch();
+                        },
                       ),
                     ),
                 ],
               ),
             ),
+            const SizedBox(height: 8),
+            Center(
+              child: ActionChip(
+                avatar: _retouching
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.face_retouching_natural_rounded),
+                label: Text(_retouching
+                    ? s.beautyWorking
+                    : _beauty != null
+                        ? '${s.beauty} ✓'
+                        : s.beauty),
+                onPressed: _busy || _retouching ? null : _openBeauty,
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
               child: Row(
                 spacing: 8,
                 children: [
@@ -700,7 +775,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                   ),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _busy ? null : _save,
+                      onPressed: _busy || _retouching ? null : _save,
                       icon: const Icon(Icons.download_rounded,
                           color: Colors.white),
                       label: FittedBox(
@@ -711,7 +786,7 @@ class _ReviewScreenState extends State<_ReviewScreen> {
                   ),
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: _busy ? null : _design,
+                      onPressed: _busy || _retouching ? null : _design,
                       icon: _busy
                           ? const SizedBox(
                               width: 16,

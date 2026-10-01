@@ -253,6 +253,17 @@ class S {
   String get scaleLabel => _t('scaleLabel');
   String get rotateResize => _t('rotateResize');
   String get reset => _t('reset');
+  String get beauty => _t('beauty');
+  String get beautySkin => _t('beautySkin');
+  String get beautyEyes => _t('beautyEyes');
+  String get beautyLips => _t('beautyLips');
+  String get beautyNose => _t('beautyNose');
+  String get beautyHold => _t('beautyHold');
+  String get beautyNoFace => _t('beautyNoFace');
+  String get beautyUnsupported => _t('beautyUnsupported');
+  String get beautyWorking => _t('beautyWorking');
+  String get beautyDone => _t('beautyDone');
+  String get beautyAfterShot => _t('beautyAfterShot');
 
   static const _values = <String, Map<String, String>>{
     'ar': {
@@ -331,6 +342,18 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
+      'beauty': 'تجميل الوجه',
+      'beautySkin': 'تنقية البشرة',
+      'beautyEyes': 'لمعة العين',
+      'beautyLips': 'الشفاه',
+      'beautyNose': 'تصغير الأنف',
+      'beautyHold': 'اضغط مطولًا على الصورة لرؤية الأصل',
+      'beautyNoFace': 'لم يتم العثور على وجه واضح في الصورة',
+      'beautyUnsupported': 'تجميل الوجه غير مدعوم على هذا الجهاز',
+      'beautyWorking': 'جارٍ تجميل الوجه…',
+      'beautyDone': 'تم تجميل الوجه ✨',
+      'beautyAfterShot': 'تجميل الوجه يُطبَّق بعد الالتقاط',
+      'apply': 'تطبيق',
       'designStory': 'صمّم ستوري',
       'strength': 'الدرجة',
       'timer': 'المؤقت',
@@ -365,7 +388,6 @@ class S {
       'inkColor': 'لون الرسم',
       'white': 'أبيض',
       'black': 'أسود',
-      'apply': 'تطبيق',
       'tryColorMode': 'للتوقيع والرسم جرّب «لون الخلفية»',
       'layers': 'الطبقات',
       'opacity': 'الشفافية',
@@ -567,6 +589,18 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
+      'beauty': 'Face retouch',
+      'beautySkin': 'Smooth skin',
+      'beautyEyes': 'Eye sparkle',
+      'beautyLips': 'Lips',
+      'beautyNose': 'Slim nose',
+      'beautyHold': 'Press and hold the photo to see the original',
+      'beautyNoFace': 'No clear face found in the photo',
+      'beautyUnsupported': 'Face retouch is not supported on this device',
+      'beautyWorking': 'Retouching the face…',
+      'beautyDone': 'Face retouched ✨',
+      'beautyAfterShot': 'Face retouch is applied after the shot',
+      'apply': 'Apply',
       'designStory': 'Design a story',
       'strength': 'Strength',
       'timer': 'Timer',
@@ -601,7 +635,6 @@ class S {
       'inkColor': 'Drawing color',
       'white': 'White',
       'black': 'Black',
-      'apply': 'Apply',
       'tryColorMode': 'For signatures and drawings, try “Background color”',
       'layers': 'Layers',
       'opacity': 'Opacity',
