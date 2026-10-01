@@ -60,8 +60,7 @@ class PhotoFilters {
 
   static List<double> matrixOf(PhotoFilter f) => switch (f) {
         PhotoFilter.none => identity,
-        // Soft, bright and slightly warm. Face retouching (skin, eyes, lips,
-        // nose) is separate and touches the face only (see FaceBeauty).
+        // Soft, bright and slightly warm (colors only, nothing is blurred).
         PhotoFilter.glow => _mul(
             _tint(1.04, 1.0, 0.97, dr: 6, dg: 4, db: 2),
             _mul(_contrast(0.94, lift: 10), _saturation(1.05)),

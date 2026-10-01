@@ -32,7 +32,6 @@ import '../widgets/quotes_sheet.dart';
 import '../widgets/sticker_sheet.dart';
 import '../widgets/story_canvas.dart';
 import '../widgets/text_editor_sheet.dart';
-import 'beauty_screen.dart';
 import 'brand_kit_screen.dart';
 import 'remove_bg_screen.dart';
 import 'signature_screen.dart';
@@ -638,20 +637,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  /// Face-only retouch of the background photo.
-  Future<void> _openBeauty() async {
-    final bytes = _controller.background.imageBytes;
-    if (bytes == null) return;
-    final s = S.of(context);
-    final result = await Navigator.push<BeautyResult>(
-      context,
-      MaterialPageRoute(builder: (_) => BeautyScreen(imageBytes: bytes)),
-    );
-    if (result == null || !mounted) return;
-    _controller.replaceBackgroundImage(result.bytes);
-    _toast(s.beautyDone);
-  }
-
   /// Tapping the app mark offers to turn it off (Settings can restore it).
   Future<void> _askHideWatermark() async {
     final s = S.of(context);
@@ -904,12 +889,6 @@ class _EditorScreenState extends State<EditorScreen> {
                             onTap: c.isBusy
                                 ? null
                                 : () => _runImageOp(ImageOperation.enhance),
-                          ),
-                          _Tool(
-                            icon: Icons.face_retouching_natural_rounded,
-                            label: s.beauty,
-                            highlight: true,
-                            onTap: c.isBusy ? null : _openBeauty,
                           ),
                           _Tool(
                             icon: Icons.content_cut_rounded,

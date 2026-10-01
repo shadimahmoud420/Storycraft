@@ -253,13 +253,6 @@ class S {
   String get scaleLabel => _t('scaleLabel');
   String get rotateResize => _t('rotateResize');
   String get reset => _t('reset');
-  String get beauty => _t('beauty');
-  String get beautyHold => _t('beautyHold');
-  String get beautyNoFace => _t('beautyNoFace');
-  String get beautyUnsupported => _t('beautyUnsupported');
-  String get beautyWorking => _t('beautyWorking');
-  String get beautyDone => _t('beautyDone');
-  String get beautyAfterShot => _t('beautyAfterShot');
 
   static const _values = <String, Map<String, String>>{
     'ar': {
@@ -338,14 +331,6 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
-      'beauty': 'تنقية البشرة',
-      'beautyHold': 'اضغط مطولًا على الصورة لرؤية الأصل',
-      'beautyNoFace': 'لم يتم العثور على وجه واضح في الصورة',
-      'beautyUnsupported': 'تنقية البشرة غير مدعومة على هذا الجهاز',
-      'beautyWorking': 'جارٍ تنقية البشرة…',
-      'beautyDone': 'تمت تنقية البشرة ✨',
-      'beautyAfterShot': 'تنقية البشرة تُطبَّق بعد الالتقاط',
-      'apply': 'تطبيق',
       'designStory': 'صمّم ستوري',
       'strength': 'الدرجة',
       'timer': 'المؤقت',
@@ -380,6 +365,7 @@ class S {
       'inkColor': 'لون الرسم',
       'white': 'أبيض',
       'black': 'أسود',
+      'apply': 'تطبيق',
       'tryColorMode': 'للتوقيع والرسم جرّب «لون الخلفية»',
       'layers': 'الطبقات',
       'opacity': 'الشفافية',
@@ -581,14 +567,6 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
-      'beauty': 'Skin smoothing',
-      'beautyHold': 'Press and hold the photo to see the original',
-      'beautyNoFace': 'No clear face found in the photo',
-      'beautyUnsupported': 'Skin smoothing is not supported on this device',
-      'beautyWorking': 'Smoothing skin…',
-      'beautyDone': 'Skin smoothed ✨',
-      'beautyAfterShot': 'Skin smoothing is applied after the shot',
-      'apply': 'Apply',
       'designStory': 'Design a story',
       'strength': 'Strength',
       'timer': 'Timer',
@@ -623,6 +601,7 @@ class S {
       'inkColor': 'Drawing color',
       'white': 'White',
       'black': 'Black',
+      'apply': 'Apply',
       'tryColorMode': 'For signatures and drawings, try “Background color”',
       'layers': 'Layers',
       'opacity': 'Opacity',
