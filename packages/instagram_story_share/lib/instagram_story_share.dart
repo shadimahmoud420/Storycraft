@@ -27,4 +27,19 @@ class InstagramStoryShare {
       return false;
     }
   }
+
+  /// Puts the PNG at [imagePath] on the system clipboard as an image
+  /// (transparency kept), ready to paste into an Instagram story.
+  /// Returns false when that is not possible.
+  static Future<bool> copyImage(String imagePath) async {
+    try {
+      final ok = await _channel
+          .invokeMethod<bool>('copyImage', {'imagePath': imagePath});
+      return ok ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
 }

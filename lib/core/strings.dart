@@ -125,6 +125,16 @@ class S {
   String get lvSaved => _t('lvSaved');
   String get lvFailed => _t('lvFailed');
   String get lvTooLong => _t('lvTooLong');
+  String get tsTitle => _t('tsTitle');
+  String get tsHint => _t('tsHint');
+  String get tsTapToWrite => _t('tsTapToWrite');
+  String get tsEdit => _t('tsEdit');
+  String get tsCopy => _t('tsCopy');
+  String get tsCopied => _t('tsCopied');
+  String get tsCopyFailed => _t('tsCopyFailed');
+  String get tsSaved => _t('tsSaved');
+  String get tsHow => _t('tsHow');
+  String get tsDarkCheck => _t('tsDarkCheck');
   String get lvSongPart => _t('lvSongPart');
   String get lvSongPartHint => _t('lvSongPartHint');
   String get lvPartLength => _t('lvPartLength');
@@ -429,6 +439,16 @@ class S {
       'lvSaved': 'تم حفظ الفيديو في المعرض',
       'lvFailed': 'تعذّر تصدير الفيديو',
       'lvTooLong': 'سيُستخدم أول ٦٠ ثانية من الفيديو',
+      'tsTitle': 'ملصق نص',
+      'tsHint': 'اكتب نصًا بخطوطك وانسخه بدون خلفية لتلصقه على الستوري',
+      'tsTapToWrite': 'اضغط هنا لكتابة النص',
+      'tsEdit': 'تعديل النص',
+      'tsCopy': 'نسخ الملصق',
+      'tsCopied': 'تم النسخ ✓ افتح ستوري إنستغرام والصقه',
+      'tsCopyFailed': 'تعذّر النسخ، جرّب الحفظ في الصور',
+      'tsSaved': 'تم حفظ الملصق في الصور بخلفية شفافة',
+      'tsHow': 'طريقة اللصق: افتح ستوري إنستغرام، سيظهر لك «إضافة ملصق» تلقائيًا، أو اضغط مطولًا على الشاشة واختر «لصق». ويمكنك أيضًا إضافته من الصور عبر ملصق «الصورة».',
+      'tsDarkCheck': 'خلفية المعاينة',
       'lvSongPart': 'المقطع المختار',
       'lvSongPartHint': 'اسحب الطرفين لاختيار بداية ونهاية المقطع من الأغنية',
       'lvPartLength': 'المدة',
@@ -727,6 +747,16 @@ class S {
       'lvSaved': 'Video saved to your gallery',
       'lvFailed': 'Could not export the video',
       'lvTooLong': 'The first 60 seconds will be used',
+      'tsTitle': 'Text sticker',
+      'tsHint': 'Write text in your fonts and copy it without a background for your story',
+      'tsTapToWrite': 'Tap here to write',
+      'tsEdit': 'Edit text',
+      'tsCopy': 'Copy sticker',
+      'tsCopied': 'Copied ✓ open an Instagram story and paste it',
+      'tsCopyFailed': 'Could not copy, try saving to Photos',
+      'tsSaved': 'Sticker saved to Photos with a transparent background',
+      'tsHow': 'To paste: open an Instagram story — it offers “Add sticker” automatically, or long-press and choose “Paste”. You can also add it from Photos with the photo sticker.',
+      'tsDarkCheck': 'Preview background',
       'lvSongPart': 'Selected part',
       'lvSongPartHint': 'Drag both ends to choose where the part starts and ends',
       'lvPartLength': 'Length',

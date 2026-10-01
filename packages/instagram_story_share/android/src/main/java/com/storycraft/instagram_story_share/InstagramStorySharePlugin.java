@@ -1,6 +1,9 @@
 package com.storycraft.instagram_story_share;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
@@ -39,6 +42,10 @@ public class InstagramStorySharePlugin
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        if ("copyImage".equals(call.method)) {
+            copyImage(call.argument("imagePath"), result);
+            return;
+        }
         if (!"shareBackgroundImage".equals(call.method)) {
             result.notImplemented();
             return;
@@ -69,6 +76,26 @@ public class InstagramStorySharePlugin
             activity.startActivity(intent);
             result.success(true);
         } catch (ActivityNotFoundException | IllegalArgumentException e) {
+            result.success(false);
+        }
+    }
+
+    /** Image on the clipboard as a content URI (apps that accept pasted
+     * images read it through our FileProvider). */
+    private void copyImage(String path, MethodChannel.Result result) {
+        if (activity == null || path == null) {
+            result.success(false);
+            return;
+        }
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                    activity, activity.getPackageName() + ".instagram_story_share", new File(path));
+            ClipboardManager clipboard =
+                    (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newUri(activity.getContentResolver(), "StoryCraft", uri);
+            clipboard.setPrimaryClip(clip);
+            result.success(true);
+        } catch (Exception e) {
             result.success(false);
         }
     }

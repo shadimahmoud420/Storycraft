@@ -11,6 +11,21 @@ public class InstagramStorySharePlugin: NSObject, FlutterPlugin {
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    if call.method == "copyImage" {
+      guard
+        let args = call.arguments as? [String: Any],
+        let path = args["imagePath"] as? String,
+        let data = FileManager.default.contents(atPath: path)
+      else {
+        result(false)
+        return
+      }
+      // As PNG data so the transparency survives (a UIImage could be
+      // flattened by the receiving app).
+      UIPasteboard.general.setData(data, forPasteboardType: "public.png")
+      result(true)
+      return
+    }
     guard call.method == "shareBackgroundImage" else {
       result(FlutterMethodNotImplemented)
       return
