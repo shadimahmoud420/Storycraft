@@ -33,6 +33,8 @@
 		<false/>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
+		<key>NSAppleMusicUsageDescription</key>
+		<string>StoryCraft lets you pick a song file to add to your video.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>StoryCraft uses the camera to take photos for your stories, in up to 4K with live filters.</string>
 		<key>NSSpeechRecognitionUsageDescription</key>

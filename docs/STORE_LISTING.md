@@ -81,3 +81,51 @@ StoryCraft helps you design beautiful, ready-to-post stories in seconds.
 المقاسات:
 - iPhone 6.9 بوصة: 1320×2868
 - Google Play: من 1080×1920 إلى 1080×2400
+
+## ما الجديد – الإصدار 1.4.0 (App Store: What's New)
+
+### عربي
+جديد في StoryCraft 🎉
+
+🎬 فيديو بأغنية
+• اختر فيديو وأضف عليه أغنيتك، واختر المقطع المطلوب منها بدقة.
+• الصق كلمات الأغنية ويضبط التطبيق توقيتها تلقائيًا مع الصوت.
+• مؤثرات رائعة للكلمات: سينمائي، كاريوكي، كتابة، كلمة كلمة، وأكثر.
+• خطوط عربية مخطوطة جميلة وسطر لاسم الأغنية والفنان.
+• يُحفظ مشروعك تلقائيًا، فلا يضيع عملك إن خرجت من التطبيق.
+
+✍️ ملصق نص بدون خلفية
+• اكتب نصك بخطوط التطبيق وألوانه الذهبية والفضية.
+• انسخه والصقه مباشرة على ستوري إنستغرام، أو احفظه بخلفية شفافة.
+
+✨ تنظيف البشرة في الكاميرا
+• يزيل البقع والاحمرار ويوحّد لون البشرة، مع الحفاظ على ملمسها الطبيعي.
+• ثلاث درجات: خفيف، متوسط، قوي.
+
+وتحسينات أخرى في الأداء والثبات.
+
+### English
+New in StoryCraft 🎉
+
+🎬 Song video
+• Add your song to any video and trim exactly the part you want.
+• Paste the lyrics and the app syncs them to the song automatically.
+• Beautiful lyric effects: cinematic, karaoke, write-on, word by word and more.
+• Elegant Arabic calligraphy fonts and a song · artist credit line.
+• Your project is saved automatically.
+
+✍️ Text sticker with no background
+• Write text in the app's fonts, gold and silver styles.
+• Copy and paste it straight onto an Instagram story, or save it as a transparent PNG.
+
+✨ Skin cleanup in the camera
+• Removes spots and redness and evens the tone while keeping your natural skin texture.
+• Three levels: light, medium, strong.
+
+Plus performance and stability improvements.
+
+### النص الترويجي (Promotional Text – حتى 170 حرفًا)
+جديد: فيديو بأغنية مع كلمات متزامنة بمؤثرات سينمائية، وملصق نص بدون خلفية للستوري، وتنظيف البشرة في الكاميرا ✨
+
+### كلمات مفتاحية مقترحة (100 حرف)
+ستوري,انستقرام,تصميم,خطوط,فيديو,أغنية,كلمات,ملصق,كاميرا,بشرة,اقتباسات,توقيع,قوالب,story
