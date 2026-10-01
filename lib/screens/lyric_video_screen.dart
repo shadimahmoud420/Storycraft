@@ -97,6 +97,9 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
   int? _syncIndex;
   bool _busy = false;
 
+  /// Language for automatic lyrics.
+  String _locale = 'ar-SA';
+
   int get _durationMs => math.min(
       _info?.durationMs ?? 0, LyricVideoExporter.maxDurationMs);
 
@@ -277,17 +280,74 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     // Keep the sync when only the wording changed.
     if (parsed.length == _lines.length) {
       for (var i = 0; i < parsed.length; i++) {
-        parsed[i].startMs = _lines[i].startMs;
+        parsed[i]
+          ..startMs = _lines[i].startMs
+          ..endMs = _lines[i].endMs;
       }
     }
     setState(() => _lines = parsed);
+  }
+
+  /// Listens to the song (or the video's own sound) and writes the lyrics
+  /// as timed captions.
+  Future<void> _autoLyrics() async {
+    final s = S.of(context);
+    final source = _audioPath ?? _videoPath;
+    if (source == null) return;
+    await _pause();
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LinearProgressIndicator(),
+              const SizedBox(height: 14),
+              Text(s.lvListening, textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      ),
+    );
+    String message;
+    try {
+      final words = await VideoComposer.transcribe(
+        path: source,
+        startMs: _audioPath != null ? _audioStartMs : 0,
+        durationMs: _durationMs,
+        locale: _locale,
+      );
+      final lines = Lyrics.fromWords(words);
+      if (lines.isEmpty) {
+        message = s.lvAutoNone;
+      } else {
+        setState(() => _lines = lines);
+        message = s.lvAutoDone;
+      }
+    } on ComposeException catch (e) {
+      message = switch (e.message) {
+        'unsupported' => s.lvAutoUnsupported,
+        'denied' => s.lvAutoDenied,
+        'no_speech' => s.lvAutoNone,
+        _ => s.lvFailed,
+      };
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    _toast(message);
   }
 
   Future<void> _startSync() async {
     if (_lines.isEmpty) return;
     await _pause(to: 0);
     for (final l in _lines) {
-      l.startMs = null;
+      l
+        ..startMs = null
+        ..endMs = null;
     }
     setState(() => _syncIndex = 0);
     await _play();
@@ -635,6 +695,28 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
                   onPressed: () => setState(() =>
                       _style = preset.copyWith(credit: _style.credit)),
                 ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            spacing: 8,
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _autoLyrics,
+                  icon: const Icon(Icons.subtitles_rounded),
+                  label: FittedBox(child: Text(s.lvAuto)),
+                ),
+              ),
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(value: 'ar-SA', label: Text(s.lvLangAr)),
+                  ButtonSegment(value: 'en-US', label: Text(s.lvLangEn)),
+                ],
+                selected: {_locale},
+                onSelectionChanged: (v) => setState(() => _locale = v.first),
+              ),
             ],
           ),
           const SizedBox(height: 6),

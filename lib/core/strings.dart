@@ -125,6 +125,14 @@ class S {
   String get lvSaved => _t('lvSaved');
   String get lvFailed => _t('lvFailed');
   String get lvTooLong => _t('lvTooLong');
+  String get lvAuto => _t('lvAuto');
+  String get lvListening => _t('lvListening');
+  String get lvAutoDone => _t('lvAutoDone');
+  String get lvAutoNone => _t('lvAutoNone');
+  String get lvAutoDenied => _t('lvAutoDenied');
+  String get lvAutoUnsupported => _t('lvAutoUnsupported');
+  String get lvLangAr => _t('lvLangAr');
+  String get lvLangEn => _t('lvLangEn');
   String get lvSoft => _t('lvSoft');
   String get lvTemplates => _t('lvTemplates');
   String get lvCinematic => _t('lvCinematic');
@@ -411,6 +419,14 @@ class S {
       'lvSaved': 'تم حفظ الفيديو في المعرض',
       'lvFailed': 'تعذّر تصدير الفيديو',
       'lvTooLong': 'سيُستخدم أول ٦٠ ثانية من الفيديو',
+      'lvAuto': 'كتابة تلقائية من الأغنية',
+      'lvListening': 'جارٍ الاستماع للأغنية وكتابة الكلمات…',
+      'lvAutoDone': 'تمت كتابة الكلمات ✓ راجعها وعدّل أي خطأ',
+      'lvAutoNone': 'لم يُتعرّف على كلمات واضحة في هذا المقطع',
+      'lvAutoDenied': 'اسمح للتطبيق بالتعرف على الكلام من الإعدادات',
+      'lvAutoUnsupported': 'الكتابة التلقائية متاحة حاليًا على iPhone فقط',
+      'lvLangAr': 'عربي',
+      'lvLangEn': 'إنجليزي',
       'lvSoft': 'ناعم',
       'lvTemplates': 'قوالب جاهزة',
       'lvCinematic': 'سينمائي',
@@ -691,6 +707,14 @@ class S {
       'lvSaved': 'Video saved to your gallery',
       'lvFailed': 'Could not export the video',
       'lvTooLong': 'The first 60 seconds will be used',
+      'lvAuto': 'Write from the song automatically',
+      'lvListening': 'Listening and writing the lyrics…',
+      'lvAutoDone': 'Lyrics written ✓ review and fix any mistakes',
+      'lvAutoNone': 'No clear words were recognized in this part',
+      'lvAutoDenied': 'Allow speech recognition for StoryCraft in Settings',
+      'lvAutoUnsupported': 'Automatic lyrics are available on iPhone for now',
+      'lvLangAr': 'Arabic',
+      'lvLangEn': 'English',
       'lvSoft': 'Soft focus',
       'lvTemplates': 'Presets',
       'lvCinematic': 'Cinematic',

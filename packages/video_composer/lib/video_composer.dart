@@ -91,4 +91,40 @@ class VideoComposer {
       throw const ComposeException('unsupported');
     }
   }
+
+  /// Writes the words sung or spoken in [path] (audio or video) between
+  /// [startMs] and [startMs] + [durationMs], with timings relative to
+  /// [startMs]. iOS only (Apple's free speech recognition, about a minute
+  /// at most); throws [ComposeException] with message `unsupported`,
+  /// `denied`, `no_speech` or a failure description.
+  static Future<List<({String text, int startMs, int durationMs})>> transcribe({
+    required String path,
+    required int startMs,
+    required int durationMs,
+    String locale = 'ar-SA',
+  }) async {
+    try {
+      final words = await _channel.invokeListMethod<Object?>('transcribe', {
+        'path': path,
+        'startMs': startMs,
+        'durationMs': durationMs,
+        'locale': locale,
+      });
+      return [
+        for (final w in words ?? const [])
+          (
+            text: (w as Map)['text'] as String,
+            startMs: (w['startMs'] as num).toInt(),
+            durationMs: (w['durationMs'] as num).toInt(),
+          ),
+      ];
+    } on PlatformException catch (e) {
+      throw ComposeException(
+          const ['unsupported', 'denied', 'no_speech'].contains(e.code)
+              ? e.code
+              : (e.message ?? e.code));
+    } on MissingPluginException {
+      throw const ComposeException('unsupported');
+    }
+  }
 }

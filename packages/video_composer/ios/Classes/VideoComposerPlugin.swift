@@ -1,11 +1,14 @@
 import AVFoundation
 import CoreImage
 import Flutter
+import Speech
 import UIKit
 
 /// Video + music + animated overlay composition with AVFoundation.
 public class VideoComposerPlugin: NSObject, FlutterPlugin {
   private var export: AVAssetExportSession?
+  private var recognizer: SFSpeechRecognizer?
+  private var recognition: SFSpeechRecognitionTask?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
@@ -23,6 +26,8 @@ public class VideoComposerPlugin: NSObject, FlutterPlugin {
       probe(args, result)
     case "compose":
       compose(args, result)
+    case "transcribe":
+      transcribe(args, result)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -177,6 +182,90 @@ public class VideoComposerPlugin: NSObject, FlutterPlugin {
               code: "failed",
               message: session.error?.localizedDescription ?? "Export failed",
               details: nil))
+        }
+      }
+    }
+  }
+
+  /// Speech to text with timings, using Apple's free speech recognition:
+  /// the excerpt of the song is cut out, then recognized word by word.
+  private func transcribe(_ args: [String: Any], _ result: @escaping FlutterResult) {
+    var finished = false
+    func finish(_ value: Any?) {
+      DispatchQueue.main.async {
+        if finished { return }
+        finished = true
+        result(value)
+      }
+    }
+    func fail(_ code: String, _ message: String? = nil) {
+      finish(FlutterError(code: code, message: message, details: nil))
+    }
+    guard
+      let path = args["path"] as? String,
+      let startMs = args["startMs"] as? Int,
+      let durationMs = args["durationMs"] as? Int
+    else {
+      fail("failed", "Bad arguments")
+      return
+    }
+    let localeId = args["locale"] as? String ?? "ar-SA"
+
+    SFSpeechRecognizer.requestAuthorization { status in
+      guard status == .authorized else {
+        fail("denied")
+        return
+      }
+      guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeId)),
+        recognizer.isAvailable
+      else {
+        fail("unsupported")
+        return
+      }
+      // Cut the excerpt (audio only) so timings start at 0.
+      let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+      guard
+        let session = AVAssetExportSession(
+          asset: asset, presetName: AVAssetExportPresetAppleM4A)
+      else {
+        fail("failed", "Cannot read the audio")
+        return
+      }
+      let excerpt = FileManager.default.temporaryDirectory
+        .appendingPathComponent("speech_\(UUID().uuidString).m4a")
+      session.outputURL = excerpt
+      session.outputFileType = .m4a
+      session.timeRange = CMTimeRange(
+        start: CMTime(value: CMTimeValue(startMs), timescale: 1000),
+        duration: CMTime(value: CMTimeValue(durationMs), timescale: 1000))
+      session.exportAsynchronously {
+        guard session.status == .completed else {
+          fail("failed", session.error?.localizedDescription)
+          return
+        }
+        let request = SFSpeechURLRecognitionRequest(url: excerpt)
+        request.shouldReportPartialResults = false
+        request.taskHint = .dictation
+        self.recognizer = recognizer
+        self.recognition = recognizer.recognitionTask(with: request) { res, error in
+          if let res = res, res.isFinal {
+            let words: [[String: Any]] = res.bestTranscription.segments.map {
+              [
+                "text": $0.substring,
+                "startMs": Int($0.timestamp * 1000),
+                "durationMs": Int($0.duration * 1000),
+              ]
+            }
+            try? FileManager.default.removeItem(at: excerpt)
+            self.recognition = nil
+            finish(words)
+          } else if let error = error {
+            try? FileManager.default.removeItem(at: excerpt)
+            self.recognition = nil
+            // 1110: no speech detected.
+            let code = (error as NSError).code == 1110 ? "no_speech" : "failed"
+            fail(code, error.localizedDescription)
+          }
         }
       }
     }

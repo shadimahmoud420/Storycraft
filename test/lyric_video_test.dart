@@ -46,6 +46,28 @@ void main() {
     });
   });
 
+  test('recognized words become timed caption lines', () {
+    CaptionWord w(String t, int at, [int d = 300]) =>
+        (text: t, startMs: at, durationMs: d);
+    final lines = Lyrics.fromWords([
+      w('يا', 1000), w('ليل', 1350), w('طوّل', 1700), w('شوية', 2050),
+      // A pause starts a new line.
+      w('خليني', 4000), w('معاك', 4350),
+      // Long run: split after five words.
+      w('واحد', 6000), w('اتنين', 6300), w('تلاتة', 6600), w('اربعة', 6900),
+      w('خمسة', 7200), w('ستة', 7500),
+    ]);
+    expect([for (final l in lines) l.text],
+        ['يا ليل طوّل شوية', 'خليني معاك', 'واحد اتنين تلاتة اربعة خمسة', 'ستة']);
+    expect(lines.first.startMs, 1000);
+    expect(lines.first.endMs, 2050 + 300 + 600);
+    // Lines leave at their end, so nothing shows in the instrumental gap.
+    final t = Lyrics.timings(lines, 10000);
+    expect(t.first.endMs, 2950);
+    expect(Lyrics.activeAt(t, 3500), isNull);
+    expect(Lyrics.activeAt(t, 4100)!.index, 1);
+  });
+
   test('output size is capped and even', () {
     expect(VideoComposer.outputSize(3840, 2160), (1920, 1080));
     expect(VideoComposer.outputSize(2160, 3840), (1080, 1920));

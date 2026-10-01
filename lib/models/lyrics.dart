@@ -28,11 +28,18 @@ enum LyricEffect {
 
 /// One line of the song, with the moment it starts (null until synced).
 class LyricLine {
-  LyricLine(this.text, [this.startMs]);
+  LyricLine(this.text, [this.startMs, this.endMs]);
 
   String text;
   int? startMs;
+
+  /// When the line leaves the screen (automatic captions end at the last
+  /// sung word); otherwise it stays until the next line.
+  int? endMs;
 }
+
+/// A recognized word and its timing in the song excerpt.
+typedef CaptionWord = ({String text, int startMs, int durationMs});
 
 /// Look of the lyrics (shared by every line).
 @immutable
@@ -195,12 +202,49 @@ class Lyrics {
     final out = <LyricTiming>[];
     for (var i = 0; i < n; i++) {
       final start = starts[i].clamp(0, totalMs.toDouble()).round();
-      final end = i + 1 < n
+      var end = i + 1 < n
           ? starts[i + 1].clamp(0, totalMs.toDouble()).round()
           : totalMs;
+      final own = lines[i].endMs;
+      if (own != null && own > start) end = math.min(end, own);
       out.add(LyricTiming(i, start, math.max(start, end)));
     }
     return out;
+  }
+
+  /// Groups recognized words into caption lines: a new line after a pause,
+  /// or when the line gets long. Each line keeps its words' timing.
+  static List<LyricLine> fromWords(List<CaptionWord> words,
+      {int maxWords = 5, int maxChars = 30, int pauseMs = 650}) {
+    final lines = <LyricLine>[];
+    var current = <CaptionWord>[];
+    void flush() {
+      if (current.isEmpty) return;
+      final last = current.last;
+      lines.add(LyricLine(
+        current.map((w) => w.text).join(' '),
+        current.first.startMs,
+        last.startMs + last.durationMs + 600,
+      ));
+      current = [];
+    }
+
+    for (final w in words) {
+      final text = w.text.trim();
+      if (text.isEmpty) continue;
+      if (current.isNotEmpty) {
+        final prev = current.last;
+        final gap = w.startMs - (prev.startMs + prev.durationMs);
+        final length =
+            current.fold<int>(0, (a, x) => a + x.text.length + 1) + text.length;
+        if (gap > pauseMs || current.length >= maxWords || length > maxChars) {
+          flush();
+        }
+      }
+      current.add((text: text, startMs: w.startMs, durationMs: w.durationMs));
+    }
+    flush();
+    return lines;
   }
 
   /// The line on screen at [ms], if any.

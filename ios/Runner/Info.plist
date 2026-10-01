@@ -35,6 +35,8 @@
 		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>StoryCraft uses the camera to take photos for your stories, in up to 4K with live filters.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>StoryCraft listens to the song you choose to write its lyrics as captions automatically.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>StoryCraft takes photos only and does not record sound.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
