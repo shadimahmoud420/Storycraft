@@ -114,7 +114,7 @@ class FaceBeauty {
   FaceBeauty._();
 
   /// Default smoothing strength (0 – 1).
-  static const defaultStrength = 0.6;
+  static const defaultStrength = 0.7;
 
   static const previewEdge = 1280;
 
@@ -383,6 +383,14 @@ void _smoothSkin(RgbaImage image, _FaceGeometry g, double strength) {
   final bg = _blurF(pg, ww, wh, sr, 3);
   final bb = _blurF(pb, ww, wh, sr, 3);
 
+  // Wide skin "base" for evening the tone: blotches, redness, under-eye
+  // circles and shine are pulled toward the surrounding skin.
+  final int lr = math.max(2, (eyeW * 0.2).round());
+  final lm = _blurF(skinW, ww, wh, lr, 3);
+  final lr2 = _blurF(pr, ww, wh, lr, 3);
+  final lg2 = _blurF(pg, ww, wh, lr, 3);
+  final lb2 = _blurF(pb, ww, wh, lr, 3);
+
   // Full-resolution pass over the face area.
   final skinK = strength * 0.85;
   for (var y = y0; y < y1; y++) {
@@ -404,11 +412,31 @@ void _smoothSkin(RgbaImage image, _FaceGeometry g, double strength) {
       // blemish or pore; strong detail (nostrils, moles, edges) stays.
       final diff = ((r - sr2) * 0.3 + (gr - sg2) * 0.59 + (b - sb2) * 0.11).abs();
       final t = skinK * ms * (1 - _smooth(16, 50, diff));
+      final sr3 = r + (sr2 - r) * t;
+      final sg3 = gr + (sg2 - gr) * t;
+      final sb3 = b + (sb2 - b) * t;
+
+      // Even tone: chroma toward the wide base, shadows lifted, shine
+      // softened; deep detail (nostrils, lip line) is kept.
+      var (yy, cb, cr) = _ycc(sr3, sg3, sb3);
+      final wm = _sample(lm, ww, wh, fx, fy);
+      if (wm > 0.02) {
+        final (by, bcb, bcr) = _ycc(_sample(lr2, ww, wh, fx, fy) / wm,
+            _sample(lg2, ww, wh, fx, fy) / wm, _sample(lb2, ww, wh, fx, fy) / wm);
+        final k = strength * ms;
+        // ...with a light, healthy rosy warmth.
+        cb += (bcb - cb) * k * 0.75 - 1.5 * k;
+        cr += (bcr - cr) * k * 0.75 + 3 * k;
+        final dy = by - yy;
+        yy += dy > 0
+            ? dy * k * 0.65 * (1 - _smooth(28, 70, dy))
+            : dy * k * 0.35;
+      }
       // Plus a soft, even glow.
-      final lift = strength * ms * 5;
-      d[i] = (r + (sr2 - r) * t + lift).round().clamp(0, 255);
-      d[i + 1] = (gr + (sg2 - gr) * t + lift).round().clamp(0, 255);
-      d[i + 2] = (b + (sb2 - b) * t + lift * 0.8).round().clamp(0, 255);
+      yy += strength * ms * 5;
+      d[i] = (yy + 1.402 * cr).round().clamp(0, 255);
+      d[i + 1] = (yy - 0.344136 * cb - 0.714136 * cr).round().clamp(0, 255);
+      d[i + 2] = (yy + 1.772 * cb).round().clamp(0, 255);
     }
   }
 }

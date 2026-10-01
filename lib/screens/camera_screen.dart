@@ -42,7 +42,7 @@ String filterLabel(S s, PhotoFilter f) => switch (f) {
     };
 
 /// Default strength per filter (Glow's colors are best a little softer).
-double defaultStrength(PhotoFilter f) => f == PhotoFilter.glow ? 0.6 : 0.85;
+double defaultStrength(PhotoFilter f) => f == PhotoFilter.glow ? 0.7 : 0.85;
 
 /// [child] with a filter's colors. Nothing is blurred: Glow's face
 /// retouch is applied to the photo itself, on the face only.
