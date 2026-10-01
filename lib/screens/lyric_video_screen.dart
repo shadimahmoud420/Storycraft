@@ -288,8 +288,9 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     setState(() => _lines = parsed);
   }
 
-  /// Listens to the song (or the video's own sound) and writes the lyrics
-  /// as timed captions.
+  /// Listens to the song (or the video's own sound). With lyrics already
+  /// written, only times them (the words stay exactly as written);
+  /// otherwise writes what it hears as timed captions.
   Future<void> _autoLyrics() async {
     final s = S.of(context);
     final source = _audioPath ?? _videoPath;
@@ -321,12 +322,22 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
         durationMs: _durationMs,
         locale: _locale,
       );
-      final lines = Lyrics.fromWords(words);
-      if (lines.isEmpty) {
-        message = s.lvAutoNone;
+      if (_lines.isNotEmpty) {
+        final timed = Lyrics.align(_lines, words);
+        setState(() {});
+        message = timed == 0
+            ? s.lvAutoNone
+            : s.lvAligned
+                .replaceAll('{n}', '$timed')
+                .replaceAll('{t}', '${_lines.length}');
       } else {
-        setState(() => _lines = lines);
-        message = s.lvAutoDone;
+        final lines = Lyrics.fromWords(words);
+        if (lines.isEmpty) {
+          message = s.lvAutoNone;
+        } else {
+          setState(() => _lines = lines);
+          message = s.lvAutoDone;
+        }
       }
     } on ComposeException catch (e) {
       message = switch (e.message) {
@@ -705,7 +716,8 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
                 child: FilledButton.icon(
                   onPressed: _busy ? null : _autoLyrics,
                   icon: const Icon(Icons.subtitles_rounded),
-                  label: FittedBox(child: Text(s.lvAuto)),
+                  label: FittedBox(
+                      child: Text(_lines.isEmpty ? s.lvAuto : s.lvAutoSync)),
                 ),
               ),
               SegmentedButton<String>(
@@ -742,6 +754,8 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
           const SizedBox(height: 6),
           Text(_lines.isEmpty ? s.lvNoLyrics : s.lvSyncHint,
               style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 4),
+          Text(s.lvTipPaste, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           TextField(
             controller: _credit,

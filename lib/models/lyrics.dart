@@ -212,6 +212,109 @@ class Lyrics {
     return out;
   }
 
+  /// Arabic-aware word normalization for matching: no diacritics or
+  /// tatweel, unified alef / ya / ta marbuta forms, letters only.
+  static String normalize(String word) {
+    var w = word.toLowerCase();
+    w = w.replaceAll(RegExp('[ً-ٰٟـ]'), '');
+    w = w.replaceAll(RegExp('[آأإٱ]'), 'ا');
+    w = w.replaceAll('ى', 'ي').replaceAll('ة', 'ه');
+    w = w.replaceAll('ؤ', 'و').replaceAll('ئ', 'ي');
+    return w.replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
+  }
+
+  /// 0 – 1 similarity of two normalized words (1 - edit distance / length).
+  static double similarity(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return 0;
+    if (a == b) return 1;
+    var prev = List<int>.generate(b.length + 1, (i) => i);
+    for (var i = 1; i <= a.length; i++) {
+      final cur = List<int>.filled(b.length + 1, 0)..[0] = i;
+      for (var j = 1; j <= b.length; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        cur[j] = math.min(math.min(cur[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+      }
+      prev = cur;
+    }
+    return 1 - prev[b.length] / math.max(a.length, b.length);
+  }
+
+  /// Times the user's own (correct) [lines] from recognized [words]: the
+  /// two word sequences are aligned in order, tolerating recognition
+  /// mistakes, and each line starts at its first matched word. Lines with
+  /// no match keep no time and are spread between their neighbours.
+  /// Returns how many lines were timed.
+  static int align(List<LyricLine> lines, List<CaptionWord> words,
+      {double minSimilarity = 0.5}) {
+    // The lyric words, each remembering its line.
+    final lyric = <(String, int, int)>[]; // (normalized, line, index in line)
+    for (var l = 0; l < lines.length; l++) {
+      final parts = lines[l].text.split(RegExp(r'\s+'));
+      var k = 0;
+      for (final p in parts) {
+        final n = normalize(p);
+        if (n.isNotEmpty) lyric.add((n, l, k++));
+      }
+    }
+    final heard = [for (final w in words) normalize(w.text)];
+    final n = lyric.length, m = heard.length;
+    for (final l in lines) {
+      l
+        ..startMs = null
+        ..endMs = null;
+    }
+    if (n == 0 || m == 0) return 0;
+
+    // Best in-order matching (longest common subsequence, weighted by
+    // similarity).
+    final score = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0));
+    for (var i = 1; i <= n; i++) {
+      for (var j = 1; j <= m; j++) {
+        final sim = similarity(lyric[i - 1].$1, heard[j - 1]);
+        var best = math.max(score[i - 1][j], score[i][j - 1]);
+        if (sim >= minSimilarity) best = math.max(best, score[i - 1][j - 1] + sim);
+        score[i][j] = best;
+      }
+    }
+    final match = List<int?>.filled(n, null); // lyric word -> heard word
+    var i = n, j = m;
+    while (i > 0 && j > 0) {
+      final sim = similarity(lyric[i - 1].$1, heard[j - 1]);
+      if (sim >= minSimilarity &&
+          (score[i][j] - (score[i - 1][j - 1] + sim)).abs() < 1e-9) {
+        match[i - 1] = j - 1;
+        i--;
+        j--;
+      } else if (score[i - 1][j] >= score[i][j - 1]) {
+        i--;
+      } else {
+        j--;
+      }
+    }
+
+    // Line times from their matched words.
+    const wordMs = 380; // typical sung word, to back off unmatched words
+    var timed = 0;
+    var lastStart = -1;
+    for (var l = 0; l < lines.length; l++) {
+      int? start, end;
+      for (var x = 0; x < n; x++) {
+        if (lyric[x].$2 != l || match[x] == null) continue;
+        final w = words[match[x]!];
+        start ??= math.max(0, w.startMs - lyric[x].$3 * wordMs);
+        end = w.startMs + w.durationMs;
+      }
+      if (start == null) continue;
+      if (start <= lastStart) start = lastStart + 1;
+      lines[l]
+        ..startMs = start
+        ..endMs = end! + 700;
+      lastStart = start;
+      timed++;
+    }
+    return timed;
+  }
+
   /// Groups recognized words into caption lines: a new line after a pause,
   /// or when the line gets long. Each line keeps its words' timing.
   static List<LyricLine> fromWords(List<CaptionWord> words,

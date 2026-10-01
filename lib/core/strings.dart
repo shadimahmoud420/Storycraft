@@ -125,6 +125,9 @@ class S {
   String get lvSaved => _t('lvSaved');
   String get lvFailed => _t('lvFailed');
   String get lvTooLong => _t('lvTooLong');
+  String get lvAutoSync => _t('lvAutoSync');
+  String get lvAligned => _t('lvAligned');
+  String get lvTipPaste => _t('lvTipPaste');
   String get lvAuto => _t('lvAuto');
   String get lvListening => _t('lvListening');
   String get lvAutoDone => _t('lvAutoDone');
@@ -419,6 +422,9 @@ class S {
       'lvSaved': 'تم حفظ الفيديو في المعرض',
       'lvFailed': 'تعذّر تصدير الفيديو',
       'lvTooLong': 'سيُستخدم أول ٦٠ ثانية من الفيديو',
+      'lvAutoSync': 'مزامنة تلقائية للكلمات',
+      'lvAligned': 'تمت مزامنة {n} من {t} سطر تلقائيًا ✓',
+      'lvTipPaste': 'للحصول على كلمات صحيحة ١٠٠٪: الصق كلمات الأغنية أولًا من «كتابة الكلمات»، ثم اضغط المزامنة التلقائية ليضبط التطبيق توقيتها فقط.',
       'lvAuto': 'كتابة تلقائية من الأغنية',
       'lvListening': 'جارٍ الاستماع للأغنية وكتابة الكلمات…',
       'lvAutoDone': 'تمت كتابة الكلمات ✓ راجعها وعدّل أي خطأ',
@@ -707,6 +713,9 @@ class S {
       'lvSaved': 'Video saved to your gallery',
       'lvFailed': 'Could not export the video',
       'lvTooLong': 'The first 60 seconds will be used',
+      'lvAutoSync': 'Sync my lyrics automatically',
+      'lvAligned': '{n} of {t} lines synced automatically ✓',
+      'lvTipPaste': 'For 100% correct lyrics: paste the song’s lyrics first in “Write lyrics”, then tap automatic sync — the app only times them.',
       'lvAuto': 'Write from the song automatically',
       'lvListening': 'Listening and writing the lyrics…',
       'lvAutoDone': 'Lyrics written ✓ review and fix any mistakes',

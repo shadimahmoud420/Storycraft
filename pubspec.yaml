@@ -4,7 +4,7 @@ publish_to: 'none'
 
 # version: <versionName>+<versionCode/buildNumber>
 # Increase the number after + with every upload to Google Play / App Store.
-version: 1.4.0+12
+version: 1.4.0+13
 
 environment:
   sdk: ^3.6.0

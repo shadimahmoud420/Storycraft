@@ -68,6 +68,32 @@ void main() {
     expect(Lyrics.activeAt(t, 4100)!.index, 1);
   });
 
+  test('pasted lyrics keep their words and get timed from recognition', () {
+    CaptionWord w(String t, int at) => (text: t, startMs: at, durationMs: 300);
+    final lines = Lyrics.parse('في عيونك حيرة\nوحكاوي كتيرة\nمتغير ياما عن زمان');
+    // Recognition with mistakes, a missing word and an extra one.
+    final heard = [
+      w('في', 1000), w('عيونه', 1400), w('حيره', 1800),
+      w('آه', 2500),
+      w('وحكاوى', 4000), w('كثيرة', 4500),
+      w('متغير', 7000), w('يا', 7400), w('زمان', 8200),
+    ];
+    final timed = Lyrics.align(lines, heard);
+    expect(timed, 3);
+    expect([for (final l in lines) l.text],
+        ['في عيونك حيرة', 'وحكاوي كتيرة', 'متغير ياما عن زمان']);
+    expect(lines[0].startMs, 1000);
+    expect(lines[1].startMs, 4000);
+    expect(lines[2].startMs, 7000);
+    expect(lines[0].endMs, greaterThan(2000));
+  });
+
+  test('arabic normalization', () {
+    expect(Lyrics.normalize('إِلَيْكَ'), Lyrics.normalize('اليك'));
+    expect(Lyrics.normalize('حيرة'), Lyrics.normalize('حيره'));
+    expect(Lyrics.similarity('عيونك', 'عيونه'), greaterThan(0.7));
+  });
+
   test('output size is capped and even', () {
     expect(VideoComposer.outputSize(3840, 2160), (1920, 1080));
     expect(VideoComposer.outputSize(2160, 3840), (1080, 1920));
