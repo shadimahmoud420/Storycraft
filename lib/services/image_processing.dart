@@ -24,6 +24,20 @@ class ImageProcessing {
   /// (edge-aware sharpening + local contrast / clarity) and refines tones.
   static Future<Uint8List> enhance(Uint8List bytes) =>
       compute(_enhance, bytes);
+
+  /// Applies a filter look at the photo's full resolution (camera saves):
+  /// the color [matrix] (Flutter 4x5 format) and an edge-aware [glow]
+  /// (0 – 1) that smooths skin while keeping eyes, brows and hair sharp.
+  static Future<Uint8List> applyLook(
+          Uint8List bytes, List<double> matrix, double glow) =>
+      compute(_look, (bytes, matrix, glow));
+}
+
+Uint8List _look((Uint8List, List<double>, double) args) {
+  final rgba = RgbaImage.decode(args.$1, fullSize: true);
+  applyColorMatrix(rgba, args.$2);
+  if (args.$3 > 0) applyGlow(rgba, args.$3);
+  return rgba.encodeJpg(quality: 95);
 }
 
 // ---------------------------------------------------------------------------
@@ -63,7 +77,8 @@ class RgbaImage {
   final int height;
   final Uint8List data;
 
-  factory RgbaImage.decode(Uint8List bytes, {int? upscaleLongEdgeTo}) {
+  factory RgbaImage.decode(Uint8List bytes,
+      {int? upscaleLongEdgeTo, bool fullSize = false}) {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) {
       throw const FormatException('Unsupported image format');
@@ -72,7 +87,7 @@ class RgbaImage {
 
     final longEdge = math.max(image.width, image.height);
     double scale = 1;
-    if (longEdge > AppConfig.maxImageEdge) {
+    if (!fullSize && longEdge > AppConfig.maxImageEdge) {
       scale = AppConfig.maxImageEdge / longEdge;
     } else if (upscaleLongEdgeTo != null && longEdge < upscaleLongEdgeTo) {
       // Upscale at most 2x; bigger jumps only add blur.
@@ -277,4 +292,112 @@ Uint8List boxBlur(Uint8List src, int w, int h, int r) {
     }
   }
   return out;
+}
+
+
+/// Applies a Flutter-style 4x5 color matrix (offsets in 0 – 255).
+void applyColorMatrix(RgbaImage image, List<double> m) {
+  final d = image.data;
+  for (var i = 0; i < d.length; i += 4) {
+    final r = d[i], g = d[i + 1], b = d[i + 2];
+    d[i] = (m[0] * r + m[1] * g + m[2] * b + m[4]).round().clamp(0, 255);
+    d[i + 1] = (m[5] * r + m[6] * g + m[7] * b + m[9]).round().clamp(0, 255);
+    d[i + 2] = (m[10] * r + m[11] * g + m[12] * b + m[14]).round().clamp(0, 255);
+  }
+}
+
+/// Edge-aware soft glow: blends a brightened blur over the photo where it
+/// is smooth (skin) and keeps the original where local contrast is high
+/// (eyes, brows, hair, text). [amount] is 0 – 1.
+void applyGlow(RgbaImage image, double amount) {
+  final w = image.width, h = image.height;
+  final src = image.data;
+  // The blur is computed at half resolution (it is smooth anyway), which
+  // keeps 4K photos fast.
+  final int sw = math.max(1, w ~/ 2), sh = math.max(1, h ~/ 2);
+  final small = Uint8List(sw * sh * 4);
+  for (var y = 0; y < sh; y++) {
+    for (var x = 0; x < sw; x++) {
+      final o = (y * sw + x) * 4;
+      final a = ((y * 2) * w + x * 2) * 4;
+      final b = a + (x * 2 + 1 < w ? 4 : 0);
+      final c = a + (y * 2 + 1 < h ? w * 4 : 0);
+      final d = c + (x * 2 + 1 < w ? 4 : 0);
+      for (var k = 0; k < 3; k++) {
+        small[o + k] = (src[a + k] + src[b + k] + src[c + k] + src[d + k]) >> 2;
+      }
+      small[o + 3] = 255;
+    }
+  }
+  // Blur radius proportional to the photo, like the live preview.
+  final int radius = math.max(1, (math.min(sw, sh) / 120).round());
+  final tmp = Uint8List(small.length);
+  for (var pass = 0; pass < 3; pass++) {
+    _boxBlurH(small, tmp, sw, sh, radius);
+    _boxBlurV(tmp, small, sw, sh, radius);
+  }
+  final k = (amount * 0.6).clamp(0.0, 1.0);
+  for (var y = 0; y < h; y++) {
+    final int by = math.min<int>(sh - 1, y >> 1);
+    for (var x = 0; x < w; x++) {
+      final i = (y * w + x) * 4;
+      final int j = (by * sw + math.min<int>(sw - 1, x >> 1)) * 4;
+      final lo = (src[i] * 54 + src[i + 1] * 183 + src[i + 2] * 19) >> 8;
+      final lb = (small[j] * 54 + small[j + 1] * 183 + small[j + 2] * 19) >> 8;
+      // 1 on smooth areas (skin), fading to 0 across edges (eyes, hair).
+      final mask = (1 - (lo - lb).abs() / 38).clamp(0.0, 1.0);
+      final t = k * mask;
+      if (t <= 0) continue;
+      for (var c = 0; c < 3; c++) {
+        final glowV = math.min(255.0, small[j + c] * 1.04 + 12 - c * 2);
+        src[i + c] =
+            (src[i + c] + (glowV - src[i + c]) * t).round().clamp(0, 255);
+      }
+    }
+  }
+}
+
+void _boxBlurH(Uint8List src, Uint8List dst, int w, int h, int r) {
+  final size = r * 2 + 1;
+  for (var y = 0; y < h; y++) {
+    final row = y * w * 4;
+    for (var c = 0; c < 3; c++) {
+      var sum = 0;
+      for (var x = -r; x <= r; x++) {
+        sum += src[row + x.clamp(0, w - 1) * 4 + c];
+      }
+      for (var x = 0; x < w; x++) {
+        dst[row + x * 4 + c] = sum ~/ size;
+        final add = math.min(w - 1, x + r + 1);
+        final sub = math.max(0, x - r);
+        sum += src[row + add * 4 + c] - src[row + sub * 4 + c];
+      }
+    }
+    for (var x = 0; x < w; x++) {
+      dst[row + x * 4 + 3] = src[row + x * 4 + 3];
+    }
+  }
+}
+
+void _boxBlurV(Uint8List src, Uint8List dst, int w, int h, int r) {
+  final size = r * 2 + 1;
+  final stride = w * 4;
+  for (var x = 0; x < w; x++) {
+    final col = x * 4;
+    for (var c = 0; c < 3; c++) {
+      var sum = 0;
+      for (var y = -r; y <= r; y++) {
+        sum += src[y.clamp(0, h - 1) * stride + col + c];
+      }
+      for (var y = 0; y < h; y++) {
+        dst[y * stride + col + c] = sum ~/ size;
+        final add = math.min(h - 1, y + r + 1);
+        final sub = math.max(0, y - r);
+        sum += src[add * stride + col + c] - src[sub * stride + col + c];
+      }
+    }
+    for (var y = 0; y < h; y++) {
+      dst[y * stride + col + 3] = src[y * stride + col + 3];
+    }
+  }
 }

@@ -34,7 +34,9 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
-		<string>StoryCraft can use the camera to take a photo for your story.</string>
+		<string>StoryCraft uses the camera to take photos for your stories, in up to 4K with live filters.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>StoryCraft takes photos only and does not record sound.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>StoryCraft saves your finished story designs to your photo library.</string>
 		<key>NSPhotoLibraryUsageDescription</key>

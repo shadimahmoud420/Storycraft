@@ -6,11 +6,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../core/config.dart';
 import '../data/art.dart';
+import '../data/filters.dart';
 import '../data/formats.dart';
 import '../data/fonts.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
 import '../core/date_text.dart';
+import 'glow_effect.dart';
 import 'ornament_painter.dart';
 import 'signature_view.dart';
 import 'styled_text.dart';
@@ -67,7 +69,11 @@ class StoryBackgroundView extends StatelessWidget {
                 ),
                 const ColoredBox(color: Color(0x33000000)),
               ],
-              filtered(photo),
+              GlowEffect(
+                amount: PhotoFilters.glowOf(
+                    background.filter, background.filterIntensity),
+                child: filtered(photo),
+              ),
               if (background.dim > 0)
                 ColoredBox(
                   color: Colors.black.withValues(alpha: background.dim),

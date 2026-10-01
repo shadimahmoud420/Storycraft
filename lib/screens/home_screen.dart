@@ -19,6 +19,7 @@ import '../core/config.dart';
 import '../core/date_text.dart';
 import '../widgets/settings_sheet.dart';
 import '../widgets/story_view.dart';
+import 'camera_screen.dart';
 import 'daily_screen.dart';
 import 'brand_kit_screen.dart';
 import 'signature_screen.dart';
@@ -242,6 +243,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           MaterialPageRoute(
                               builder: (_) => const DailyScreen()),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _StartCard(
+                      icon: Icons.photo_camera_rounded,
+                      title: s.camera,
+                      subtitle: s.cameraHint,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF111827), Color(0xFF7C3AED)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const CameraScreen()),
                       ),
                     ),
                     const SizedBox(height: 20),

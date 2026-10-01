@@ -6,6 +6,9 @@ import '../state/editor_controller.dart';
 
 String filterLabel(S s, PhotoFilter f) => switch (f) {
       PhotoFilter.none => s.fNone,
+      PhotoFilter.glow => s.fGlow,
+      PhotoFilter.food => s.fFood,
+      PhotoFilter.nature => s.fNature,
       PhotoFilter.vivid => s.fVivid,
       PhotoFilter.warm => s.fWarm,
       PhotoFilter.cool => s.fCool,

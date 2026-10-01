@@ -80,6 +80,20 @@ class S {
   String get catWisdom => _t('catWisdom');
   String get catQuote => _t('catQuote');
   String get catSaying => _t('catSaying');
+  String get fGlow => _t('fGlow');
+  String get fFood => _t('fFood');
+  String get fNature => _t('fNature');
+  String get camera => _t('camera');
+  String get cameraHint => _t('cameraHint');
+  String get cameraDenied => _t('cameraDenied');
+  String get cameraUnavailable => _t('cameraUnavailable');
+  String get retake => _t('retake');
+  String get saveFull => _t('saveFull');
+  String get designStory => _t('designStory');
+  String get strength => _t('strength');
+  String get timer => _t('timer');
+  String get grid => _t('grid');
+  String get flash => _t('flash');
   String get quotesDua => _t('quotesDua');
   String get quotesAyah => _t('quotesAyah');
   String get today => _t('today');
@@ -308,6 +322,20 @@ class S {
       'catWisdom': 'حكمة',
       'catQuote': 'اقتباس',
       'catSaying': 'أقوال الحكماء',
+      'fGlow': 'Glow',
+      'fFood': 'طعام',
+      'fNature': 'طبيعة',
+      'camera': 'الكاميرا',
+      'cameraHint': 'تصوير 4K بفلاتر مباشرة',
+      'cameraDenied': 'اسمح للتطبيق باستخدام الكاميرا من إعدادات الجوال',
+      'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
+      'retake': 'إعادة',
+      'saveFull': 'حفظ بالجودة الكاملة',
+      'designStory': 'صمّم ستوري',
+      'strength': 'الدرجة',
+      'timer': 'المؤقت',
+      'grid': 'الشبكة',
+      'flash': 'الفلاش',
       'quotesDua': 'أدعية',
       'quotesAyah': 'آيات',
       'today': 'اليوم',
@@ -530,6 +558,20 @@ class S {
       'catWisdom': 'Wisdom',
       'catQuote': 'Quote',
       'catSaying': 'Sayings',
+      'fGlow': 'Glow',
+      'fFood': 'Food',
+      'fNature': 'Nature',
+      'camera': 'Camera',
+      'cameraHint': '4K shots with live filters',
+      'cameraDenied': 'Allow camera access in your phone settings',
+      'cameraUnavailable': 'No camera available on this device',
+      'retake': 'Retake',
+      'saveFull': 'Save full quality',
+      'designStory': 'Design a story',
+      'strength': 'Strength',
+      'timer': 'Timer',
+      'grid': 'Grid',
+      'flash': 'Flash',
       'quotesDua': 'Prayers',
       'quotesAyah': 'Verses',
       'today': 'Today',
