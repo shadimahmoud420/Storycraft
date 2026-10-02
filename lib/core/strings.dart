@@ -89,6 +89,29 @@ class S {
   String get cameraUnavailable => _t('cameraUnavailable');
   String get retake => _t('retake');
   String get saveFull => _t('saveFull');
+  String get nwTitle => _t('nwTitle');
+  String get nwHint => _t('nwHint');
+  String get nwSetup => _t('nwSetup');
+  String get nwSetupHint => _t('nwSetupHint');
+  String get nwName => _t('nwName');
+  String get nwHandle => _t('nwHandle');
+  String get nwSignature => _t('nwSignature');
+  String get nwNoSignature => _t('nwNoSignature');
+  String get nwNewSignature => _t('nwNewSignature');
+  String get nwLogo => _t('nwLogo');
+  String get nwPickLogo => _t('nwPickLogo');
+  String get nwRemoveLogo => _t('nwRemoveLogo');
+  String get nwColor => _t('nwColor');
+  String get nwDesign => _t('nwDesign');
+  String get nwBreaking => _t('nwBreaking');
+  String get nwField => _t('nwField');
+  String get nwPaper => _t('nwPaper');
+  String get nwShowDate => _t('nwShowDate');
+  String get nwText => _t('nwText');
+  String get nwLocation => _t('nwLocation');
+  String get nwPhoto => _t('nwPhoto');
+  String get nwRemovePhoto => _t('nwRemovePhoto');
+  String get nwClear => _t('nwClear');
   String get psTitle => _t('psTitle');
   String get psHint => _t('psHint');
   String get psPick => _t('psPick');
@@ -428,6 +451,29 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
+      'nwTitle': 'قالب الأخبار',
+      'nwHint': 'اكتب الخبر فقط، واسمك وتوقيعك وشعارك جاهزون دائمًا',
+      'nwSetup': 'إعداد القالب',
+      'nwSetupHint': 'تُحفظ هذه البيانات مرة واحدة وتظهر في كل خبر',
+      'nwName': 'الاسم (المراسل أو الصفحة)',
+      'nwHandle': 'المعرّف أو الحساب (اختياري)',
+      'nwSignature': 'التوقيع',
+      'nwNoSignature': 'بدون توقيع',
+      'nwNewSignature': 'توقيع جديد',
+      'nwLogo': 'الشعار',
+      'nwPickLogo': 'اختيار شعار',
+      'nwRemoveLogo': 'إزالة الشعار',
+      'nwColor': 'اللون',
+      'nwDesign': 'التصميم',
+      'nwBreaking': 'عاجل',
+      'nwField': 'ميداني بصورة',
+      'nwPaper': 'بطاقة بيضاء',
+      'nwShowDate': 'إظهار التاريخ والوقت تلقائيًا',
+      'nwText': 'اكتب الخبر هنا…',
+      'nwLocation': 'المكان (اختياري)',
+      'nwPhoto': 'صورة الخبر',
+      'nwRemovePhoto': 'إزالة الصورة',
+      'nwClear': 'خبر جديد',
       'psTitle': 'استوديو المنتجات',
       'psHint': 'غيّر أرضية وخلفية صورة منتجك بضغطة: رخام، خشب، استوديو',
       'psPick': 'اختر صورة المنتج',
@@ -761,6 +807,29 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
+      'nwTitle': 'News template',
+      'nwHint': 'Just type the news; your name, signature and logo are always there',
+      'nwSetup': 'Template setup',
+      'nwSetupHint': 'Saved once, shown on every post',
+      'nwName': 'Name (reporter or page)',
+      'nwHandle': 'Handle or account (optional)',
+      'nwSignature': 'Signature',
+      'nwNoSignature': 'No signature',
+      'nwNewSignature': 'New signature',
+      'nwLogo': 'Logo',
+      'nwPickLogo': 'Choose a logo',
+      'nwRemoveLogo': 'Remove logo',
+      'nwColor': 'Color',
+      'nwDesign': 'Design',
+      'nwBreaking': 'Breaking',
+      'nwField': 'On-site photo',
+      'nwPaper': 'White card',
+      'nwShowDate': 'Show date and time automatically',
+      'nwText': 'Type the news here…',
+      'nwLocation': 'Place (optional)',
+      'nwPhoto': 'News photo',
+      'nwRemovePhoto': 'Remove photo',
+      'nwClear': 'New post',
       'psTitle': 'Product studio',
       'psHint': 'Put your product on marble, wood or a studio backdrop',
       'psPick': 'Choose a product photo',

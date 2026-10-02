@@ -22,6 +22,7 @@ import '../widgets/story_view.dart';
 import 'camera_screen.dart';
 import 'daily_screen.dart';
 import 'lyric_video_screen.dart';
+import 'news_screen.dart';
 import 'product_studio_screen.dart';
 import 'text_sticker_screen.dart';
 import 'brand_kit_screen.dart';
@@ -246,6 +247,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           MaterialPageRoute(
                               builder: (_) => const DailyScreen()),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _StartCard(
+                      icon: Icons.newspaper_rounded,
+                      title: s.nwTitle,
+                      subtitle: s.nwHint,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF0B1220), Color(0xFFD62828)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NewsScreen()),
                       ),
                     ),
                     const SizedBox(height: 14),

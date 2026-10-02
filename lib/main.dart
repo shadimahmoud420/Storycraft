@@ -5,6 +5,7 @@ import 'app.dart';
 import 'core/locale_controller.dart';
 import 'services/app_settings.dart';
 import 'services/brand_kit.dart';
+import 'services/news_profile.dart';
 import 'services/signature_store.dart';
 
 Future<void> main() async {
@@ -15,5 +16,6 @@ Future<void> main() async {
   await AppSettings.instance.load();
   await BrandKitStore.instance.load();
   await SignatureStore.instance.load();
+  await NewsProfileStore.instance.load();
   runApp(StoryCraftApp(localeController: locale));
 }
