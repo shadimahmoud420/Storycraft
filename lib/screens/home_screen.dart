@@ -22,6 +22,7 @@ import '../widgets/story_view.dart';
 import 'camera_screen.dart';
 import 'daily_screen.dart';
 import 'lyric_video_screen.dart';
+import 'product_studio_screen.dart';
 import 'text_sticker_screen.dart';
 import 'brand_kit_screen.dart';
 import 'signature_screen.dart';
@@ -295,6 +296,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                             builder: (_) => const TextStickerScreen()),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _StartCard(
+                      icon: Icons.shopping_bag_rounded,
+                      title: s.psTitle,
+                      subtitle: s.psHint,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF232526), Color(0xFFB08D57)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const ProductStudioScreen()),
                       ),
                     ),
                     const SizedBox(height: 20),

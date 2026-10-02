@@ -89,6 +89,23 @@ class S {
   String get cameraUnavailable => _t('cameraUnavailable');
   String get retake => _t('retake');
   String get saveFull => _t('saveFull');
+  String get psTitle => _t('psTitle');
+  String get psHint => _t('psHint');
+  String get psPick => _t('psPick');
+  String get psPickHint => _t('psPickHint');
+  String get psCutting => _t('psCutting');
+  String get psSurface => _t('psSurface');
+  String get psLight => _t('psLight');
+  String get psFromPhotos => _t('psFromPhotos');
+  String get psShadow => _t('psShadow');
+  String get psReflection => _t('psReflection');
+  String get psBlur => _t('psBlur');
+  String get psBrightness => _t('psBrightness');
+  String get psMatch => _t('psMatch');
+  String get psDragHint => _t('psDragHint');
+  String get psChange => _t('psChange');
+  String get psLying => _t('psLying');
+  String get psStanding => _t('psStanding');
   String get scTitle => _t('scTitle');
   String get scOff => _t('scOff');
   String get scLight => _t('scLight');
@@ -411,6 +428,23 @@ class S {
       'cameraUnavailable': 'لا توجد كاميرا متاحة على هذا الجهاز',
       'retake': 'إعادة',
       'saveFull': 'حفظ بالجودة الكاملة',
+      'psTitle': 'استوديو المنتجات',
+      'psHint': 'غيّر أرضية وخلفية صورة منتجك بضغطة: رخام، خشب، استوديو',
+      'psPick': 'اختر صورة المنتج',
+      'psPickHint': 'صوّر منتجك من زاوية مائلة قليلًا، وسيُفصل تلقائيًا ويوضع على أرضية جديدة',
+      'psCutting': 'جارٍ فصل المنتج عن الخلفية…',
+      'psSurface': 'الأرضية',
+      'psLight': 'الظل والإضاءة',
+      'psFromPhotos': 'من صوري',
+      'psShadow': 'الظل',
+      'psReflection': 'الانعكاس',
+      'psBlur': 'تمويه الخلفية',
+      'psBrightness': 'إضاءة المنتج',
+      'psMatch': 'مطابقة الألوان',
+      'psDragHint': 'اسحب المنتج لتحريكه، وقرّب بإصبعين لتكبيره',
+      'psChange': 'تغيير الصورة',
+      'psLying': 'ممدد',
+      'psStanding': 'واقف',
       'scTitle': 'تنظيف البشرة',
       'scOff': 'إيقاف',
       'scLight': 'خفيف',
@@ -727,6 +761,23 @@ class S {
       'cameraUnavailable': 'No camera available on this device',
       'retake': 'Retake',
       'saveFull': 'Save full quality',
+      'psTitle': 'Product studio',
+      'psHint': 'Put your product on marble, wood or a studio backdrop',
+      'psPick': 'Choose a product photo',
+      'psPickHint': 'Shoot your product from a slight angle; it is cut out and placed on a new surface',
+      'psCutting': 'Cutting out the product…',
+      'psSurface': 'Surface',
+      'psLight': 'Shadow & light',
+      'psFromPhotos': 'My photo',
+      'psShadow': 'Shadow',
+      'psReflection': 'Reflection',
+      'psBlur': 'Background blur',
+      'psBrightness': 'Product light',
+      'psMatch': 'Color match',
+      'psDragHint': 'Drag to move, pinch to resize',
+      'psChange': 'Change photo',
+      'psLying': 'Lying',
+      'psStanding': 'Standing',
       'scTitle': 'Skin cleanup',
       'scOff': 'Off',
       'scLight': 'Light',
