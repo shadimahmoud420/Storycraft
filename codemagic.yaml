@@ -59,9 +59,8 @@ workflows:
       # Upload keystore added in Codemagic → Team → Code signing identities.
       android_signing:
         - storycraft_upload_key
-      groups:
-        # Holds GCLOUD_SERVICE_ACCOUNT_CREDENTIALS (Play Console service account JSON).
-        - google_play
+      # After the first release is uploaded by hand, add the google_play group
+      # (GCLOUD_SERVICE_ACCOUNT_CREDENTIALS) and the publishing section below.
     scripts:
       - name: Native project setup
         script: |
@@ -79,8 +78,10 @@ workflows:
         script: flutter build appbundle --release --build-number=$PROJECT_BUILD_NUMBER
     artifacts:
       - build/app/outputs/bundle/release/*.aab
-    publishing:
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
-        submit_as_draft: true
+    # The first upload to a new Play app must be manual (download the .aab
+    # from Artifacts). Then enable automatic publishing:
+    # publishing:
+    #   google_play:
+    #     credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    #     track: alpha
+    #     submit_as_draft: true
