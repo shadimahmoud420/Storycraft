@@ -101,6 +101,9 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
   int? _syncIndex;
   bool _busy = false;
 
+  /// Moves every lyric earlier (negative) or later, in ms.
+  int _offsetMs = 0;
+
   /// Language for automatic lyrics.
   String _locale = 'ar-SA';
 
@@ -162,6 +165,7 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
         'lines': [for (final l in _lines) l.toJson()],
         'style': _style.toJson(),
         'locale': _locale,
+        'offset': _offsetMs,
       });
     } catch (_) {}
   }
@@ -191,6 +195,7 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
         ];
         _style = style;
         _locale = j['locale'] as String? ?? _locale;
+        _offsetMs = (j['offset'] as num?)?.toInt() ?? 0;
       });
       _toast(S.of(context).lvRestored);
     } catch (_) {
@@ -237,11 +242,13 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
       _audioStartMs = 0;
       _audioEndMs = null;
       _lines = [];
+      _offsetMs = 0;
       _style = LyricsStyle.cinematic;
     });
   }
 
-  List<LyricTiming> get _timings => Lyrics.timings(_lines, _durationMs);
+  List<LyricTiming> get _timings =>
+      Lyrics.timings(_lines, _durationMs, offsetMs: _offsetMs);
 
   @override
   void dispose() {
@@ -539,6 +546,239 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     if (i + 1 >= _lines.length) _toast(S.of(context).lvSynced);
   }
 
+  /// While syncing: forget the last stamp and replay a little before it.
+  Future<void> _backLine() async {
+    final i = _syncIndex;
+    if (i == null || i == 0) return;
+    final prev = i - 1;
+    final at = _lines[prev].startMs ?? 0;
+    _lines[prev].startMs = null;
+    await _pause();
+    _position.value = math.max(0, at - 2500);
+    setState(() => _syncIndex = prev);
+    await _play();
+  }
+
+  void _nudgeOffset(int ms) =>
+      setState(() => _offsetMs = (_offsetMs + ms).clamp(-5000, 5000));
+
+  /// Per-line timing: listen to a line, then move when it shows and hides.
+  Future<void> _fixLines() async {
+    if (_lines.isEmpty) return;
+    final s = S.of(context);
+    await _pause();
+    if (!mounted) return;
+    // Pin every line where it is now, so moving one moves only that one.
+    final now = _timings;
+    for (var i = 0; i < _lines.length; i++) {
+      _lines[i].startMs ??= now[i].startMs - _offsetMs;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      barrierColor: Colors.black26,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) {
+          void edit(VoidCallback fn) {
+            setState(fn);
+            setSheet(() {});
+          }
+
+          Future<void> playFrom(int ms) async {
+            await _pause();
+            _position.value = math.max(0, ms - 1000);
+            await _play();
+            setSheet(() {});
+          }
+
+          final timings = _timings;
+          final n = _lines.length;
+          final small = Theme.of(context).textTheme.bodySmall;
+
+          // Effective (on screen) times <-> stored ones.
+          void setStart(int i, int eff) {
+            final lo = i > 0 ? _lines[i - 1].startMs! + 100 : 0;
+            final hi = i + 1 < n
+                ? _lines[i + 1].startMs! - 100
+                : _durationMs - _offsetMs - 200;
+            final raw = (eff - _offsetMs).clamp(lo, math.max(lo, hi)).toInt();
+            final line = _lines[i];
+            line.startMs = raw;
+            if (line.endMs != null && line.endMs! < raw + 200) {
+              line.endMs = raw + 200;
+            }
+          }
+
+          void setEnd(int i, int eff) {
+            final start = _lines[i].startMs!;
+            _lines[i].endMs = (eff - _offsetMs)
+                .clamp(start + 200, math.max(start + 200, _durationMs))
+                .toInt();
+          }
+
+          Widget timeRow(String label, String value,
+                  {required VoidCallback minus,
+                  required VoidCallback plus,
+                  required VoidCallback now,
+                  VoidCallback? clear}) =>
+              Row(
+                children: [
+                  SizedBox(width: 44, child: Text(label, style: small)),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: minus,
+                    icon: const Icon(Icons.remove_rounded, size: 18),
+                  ),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(value,
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.center),
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: plus,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                  ),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact),
+                    onPressed: now,
+                    icon: const Icon(Icons.my_location_rounded, size: 16),
+                    label: Text(s.lvNow),
+                  ),
+                  SizedBox(
+                    width: 36,
+                    child: clear == null
+                        ? null
+                        : IconButton(
+                            visualDensity: VisualDensity.compact,
+                            onPressed: clear,
+                            icon: const Icon(Icons.close_rounded, size: 16),
+                          ),
+                  ),
+                ],
+              );
+
+          return SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.55,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 16, 6),
+                  child: Row(
+                    children: [
+                      ValueListenableBuilder<int>(
+                        valueListenable: _position,
+                        builder: (context, ms, _) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton.filledTonal(
+                              onPressed: () async {
+                                _playing ? await _pause() : await _play();
+                                setSheet(() {});
+                              },
+                              icon: Icon(_playing
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(_clockFine(ms),
+                                textDirection: TextDirection.ltr),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(s.lvFixLinesHint, style: small)),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 16),
+                    itemCount: n,
+                    separatorBuilder: (_, __) => const Divider(height: 8),
+                    itemBuilder: (context, i) {
+                      final t = timings[i];
+                      final line = _lines[i];
+                      return ValueListenableBuilder<int>(
+                        valueListenable: _position,
+                        builder: (context, ms, child) => DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: ms >= t.startMs && ms < t.endMs
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.5)
+                                : null,
+                          ),
+                          child: child,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () => playFrom(t.startMs),
+                                  icon: const Icon(
+                                      Icons.play_circle_outline_rounded),
+                                ),
+                                Expanded(
+                                  child: Text(line.text,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall),
+                                ),
+                              ],
+                            ),
+                            timeRow(
+                              s.lvShows,
+                              _clockFine(t.startMs),
+                              minus: () =>
+                                  edit(() => setStart(i, t.startMs - 100)),
+                              plus: () =>
+                                  edit(() => setStart(i, t.startMs + 100)),
+                              now: () =>
+                                  edit(() => setStart(i, _position.value)),
+                            ),
+                            timeRow(
+                              s.lvHides,
+                              line.endMs == null
+                                  ? s.lvWithNext
+                                  : _clockFine(t.endMs),
+                              minus: () =>
+                                  edit(() => setEnd(i, t.endMs - 100)),
+                              plus: () =>
+                                  edit(() => setEnd(i, t.endMs + 100)),
+                              now: () =>
+                                  edit(() => setEnd(i, _position.value)),
+                              clear: line.endMs == null
+                                  ? null
+                                  : () => edit(() => line.endMs = null),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    await _pause();
+  }
+
   // --- Export ----------------------------------------------------------------
 
   Future<void> _export() async {
@@ -578,6 +818,7 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
         audioStartMs: _audioStartMs,
         lines: _lines,
         style: _style,
+        offsetMs: _offsetMs,
         onProgress: (p) => progress.value = p >= 1 ? null : p,
       );
     } catch (_) {
@@ -809,6 +1050,11 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
             onPressed: () => _pause(),
             icon: const Icon(Icons.stop_rounded),
           ),
+          IconButton(
+            tooltip: s.lvBackLine,
+            onPressed: i == 0 ? null : _backLine,
+            icon: const Icon(Icons.undo_rounded),
+          ),
           Expanded(
             child: FilledButton(
               onPressed: _stampLine,
@@ -988,6 +1234,42 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
               ),
             ],
           ),
+          if (_lines.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            OutlinedButton.icon(
+              onPressed: _fixLines,
+              icon: const Icon(Icons.tune_rounded),
+              label: Text(s.lvFixLines),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              spacing: 6,
+              children: [
+                Expanded(child: Text(s.lvOffset)),
+                OutlinedButton(
+                  onPressed: () => _nudgeOffset(-100),
+                  child: Text(s.lvEarlier),
+                ),
+                GestureDetector(
+                  onTap: () => setState(() => _offsetMs = 0),
+                  child: SizedBox(
+                    width: 50,
+                    child: Text(
+                      '${_offsetMs > 0 ? '+' : _offsetMs < 0 ? '−' : ''}'
+                      '${(_offsetMs.abs() / 1000).toStringAsFixed(1)}s',
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.ltr,
+                    ),
+                  ),
+                ),
+                OutlinedButton(
+                  onPressed: () => _nudgeOffset(100),
+                  child: Text(s.lvLater),
+                ),
+              ],
+            ),
+            Text(s.lvOffsetHint, style: Theme.of(context).textTheme.bodySmall),
+          ],
           const SizedBox(height: 6),
           Text(_lines.isEmpty ? s.lvNoLyrics : s.lvSyncHint,
               style: Theme.of(context).textTheme.bodySmall),

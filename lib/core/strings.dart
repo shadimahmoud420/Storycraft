@@ -153,6 +153,17 @@ class S {
   String get lvSyncHint => _t('lvSyncHint');
   String get lvNext => _t('lvNext');
   String get lvSynced => _t('lvSynced');
+  String get lvOffset => _t('lvOffset');
+  String get lvEarlier => _t('lvEarlier');
+  String get lvLater => _t('lvLater');
+  String get lvOffsetHint => _t('lvOffsetHint');
+  String get lvFixLines => _t('lvFixLines');
+  String get lvFixLinesHint => _t('lvFixLinesHint');
+  String get lvShows => _t('lvShows');
+  String get lvHides => _t('lvHides');
+  String get lvWithNext => _t('lvWithNext');
+  String get lvNow => _t('lvNow');
+  String get lvBackLine => _t('lvBackLine');
   String get lvNoLyrics => _t('lvNoLyrics');
   String get lvEffect => _t('lvEffect');
   String get lvLook => _t('lvLook');
@@ -515,6 +526,17 @@ class S {
       'lvSyncHint': 'اضغط «التالي» لحظة بداية كل سطر',
       'lvNext': 'التالي',
       'lvSynced': 'تمت المزامنة ✓',
+      'lvOffset': 'توقيت كل الكلمات',
+      'lvEarlier': 'قدّم',
+      'lvLater': 'أخّر',
+      'lvOffsetHint': 'إذا ظهرت الكلمات قبل الغناء اضغط «أخّر»، وإذا ظهرت بعده اضغط «قدّم».',
+      'lvFixLines': 'ضبط كل سطر',
+      'lvFixLinesHint': 'اضغط ▶ لسماع السطر، ثم اضبط متى يظهر ومتى يختفي. زر «الآن» يضع اللحظة الحالية من الأغنية.',
+      'lvShows': 'يظهر',
+      'lvHides': 'يختفي',
+      'lvWithNext': 'مع السطر التالي',
+      'lvNow': 'الآن',
+      'lvBackLine': 'رجوع سطر',
       'lvNoLyrics': 'لم تُكتب كلمات بعد',
       'lvEffect': 'المؤثر',
       'lvLook': 'الشكل',
@@ -871,6 +893,17 @@ class S {
       'lvSyncHint': 'Tap “Next” the moment each line starts',
       'lvNext': 'Next',
       'lvSynced': 'Synced ✓',
+      'lvOffset': 'All lyrics timing',
+      'lvEarlier': 'Earlier',
+      'lvLater': 'Later',
+      'lvOffsetHint': 'If lyrics show before the singing tap “Later”; if after, tap “Earlier”.',
+      'lvFixLines': 'Fix each line',
+      'lvFixLinesHint': 'Tap ▶ to hear a line, then set when it shows and hides. “Now” uses the current moment of the song.',
+      'lvShows': 'Shows',
+      'lvHides': 'Hides',
+      'lvWithNext': 'with the next line',
+      'lvNow': 'Now',
+      'lvBackLine': 'Back a line',
       'lvNoLyrics': 'No lyrics yet',
       'lvEffect': 'Effect',
       'lvLook': 'Look',

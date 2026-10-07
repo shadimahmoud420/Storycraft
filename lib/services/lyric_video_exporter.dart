@@ -29,9 +29,10 @@ class LyricVideoExporter {
     required List<LyricLine> lines,
     required LyricsStyle style,
     required int durationMs,
+    int offsetMs = 0,
     void Function(double progress)? onProgress,
   }) async {
-    final timings = Lyrics.timings(lines, durationMs);
+    final timings = Lyrics.timings(lines, durationMs, offsetMs: offsetMs);
     final count = (durationMs * fps / 1000).ceil();
     final rendered = <LyricsFrame, int>{};
     final map = <int>[];
@@ -84,6 +85,7 @@ class LyricVideoExporter {
     int audioStartMs = 0,
     required List<LyricLine> lines,
     required LyricsStyle style,
+    int offsetMs = 0,
     void Function(double progress)? onProgress,
   }) async {
     final tmp = await getTemporaryDirectory();
@@ -100,6 +102,7 @@ class LyricVideoExporter {
         lines: lines,
         style: style,
         durationMs: length,
+        offsetMs: offsetMs,
         onProgress: onProgress,
       );
       final output = '${tmp.path}/StoryCraft_lyrics_$stamp.mp4';

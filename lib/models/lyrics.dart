@@ -219,32 +219,59 @@ class Lyrics {
       ];
 
   /// Start and end of every line within [totalMs]. Lines that are not
-  /// synced yet are spread evenly between their synced neighbours.
-  static List<LyricTiming> timings(List<LyricLine> lines, int totalMs) {
+  /// synced yet fill the gap between their synced neighbours, after the
+  /// previous line has been sung and in proportion to their length.
+  /// [offsetMs] moves every synced moment (negative = earlier).
+  static List<LyricTiming> timings(List<LyricLine> lines, int totalMs,
+      {int offsetMs = 0}) {
     final n = lines.length;
     if (n == 0 || totalMs <= 0) return const [];
+    final total = totalMs.toDouble();
+    double shift(int ms) => (ms + offsetMs).clamp(0, totalMs).toDouble();
+    double? endOf(int i) {
+      final e = lines[i].endMs;
+      return e == null ? null : shift(e);
+    }
+
     // Anchors: synced lines, plus the start (0 ms) and the end.
     final anchors = <(int, double)>[
       if (lines.first.startMs == null) (0, 0),
       for (var i = 0; i < n; i++)
-        if (lines[i].startMs != null) (i, lines[i].startMs!.toDouble()),
-      (n, totalMs.toDouble()),
+        if (lines[i].startMs != null) (i, shift(lines[i].startMs!)),
+      (n, total),
+    ];
+    // Longer lines take longer to sing.
+    final weight = [
+      for (final l in lines)
+        math.max(1, l.text.trim().split(RegExp(r'\s+')).length).toDouble(),
     ];
     final starts = List<double>.filled(n, 0);
     for (var a = 0; a + 1 < anchors.length; a++) {
       final (ia, ta) = anchors[a];
       final (ib, tb) = anchors[a + 1];
-      for (var k = ia; k < ib && k < n; k++) {
-        starts[k] = ta + (tb - ta) * (k - ia) / (ib - ia);
+      if (ia >= n) break;
+      starts[ia] = ta;
+      if (ib - ia < 2) continue;
+      // The lines in between come after the anchor line is sung (when
+      // its end is known), sharing the rest by length.
+      final sung = lines[ia].startMs != null ? endOf(ia) : null;
+      final afterSung = sung != null && sung > ta && sung < tb;
+      final from = afterSung ? sung : ta;
+      var acc = afterSung ? 0.0 : weight[ia];
+      var sum = acc;
+      for (var k = ia + 1; k < ib; k++) {
+        sum += weight[k];
+      }
+      for (var k = ia + 1; k < ib; k++) {
+        starts[k] = from + (tb - from) * acc / sum;
+        acc += weight[k];
       }
     }
     final out = <LyricTiming>[];
     for (var i = 0; i < n; i++) {
-      final start = starts[i].clamp(0, totalMs.toDouble()).round();
-      var end = i + 1 < n
-          ? starts[i + 1].clamp(0, totalMs.toDouble()).round()
-          : totalMs;
-      final own = lines[i].endMs;
+      final start = starts[i].clamp(0, total).round();
+      var end = i + 1 < n ? starts[i + 1].clamp(0, total).round() : totalMs;
+      final own = lines[i].startMs != null ? endOf(i)?.round() : null;
       if (own != null && own > start) end = math.min(end, own);
       out.add(LyricTiming(i, start, math.max(start, end)));
     }
@@ -334,21 +361,27 @@ class Lyrics {
     // Line times from their matched words.
     const wordMs = 380; // typical sung word, to back off unmatched words
     var timed = 0;
-    var lastStart = -1;
+    LyricLine? last;
     for (var l = 0; l < lines.length; l++) {
       int? start, end;
       for (var x = 0; x < n; x++) {
         if (lyric[x].$2 != l || match[x] == null) continue;
         final w = words[match[x]!];
-        start ??= math.max(0, w.startMs - lyric[x].$3 * wordMs);
+        // Words missed at the start of the line were sung just before.
+        start ??= math.max(0, w.startMs - math.min(lyric[x].$3 * wordMs, 1200));
         end = w.startMs + w.durationMs;
       }
       if (start == null) continue;
-      if (start <= lastStart) start = lastStart + 1;
+      if (last != null) {
+        final prevEnd = last.endMs!;
+        // Never before the previous line, and that line steps aside.
+        if (start <= last.startMs!) start = last.startMs! + 1;
+        if (prevEnd > start) last.endMs = start;
+      }
       lines[l]
         ..startMs = start
         ..endMs = end! + 700;
-      lastStart = start;
+      last = lines[l];
       timed++;
     }
     return timed;

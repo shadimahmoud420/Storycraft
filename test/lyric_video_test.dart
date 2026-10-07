@@ -32,6 +32,43 @@ void main() {
       expect(Lyrics.activeAt(t, 3500)!.index, 1);
     });
 
+    test('offset moves every synced line, earlier or later', () {
+      final lines = [LyricLine('1', 1000), LyricLine('2', 3000, 4000)];
+      final later = Lyrics.timings(lines, 9000, offsetMs: 400);
+      expect([for (final x in later) x.startMs], [1400, 3400]);
+      expect(later.last.endMs, 4400);
+      final earlier = Lyrics.timings(lines, 9000, offsetMs: -1500);
+      expect(earlier.first.startMs, 0); // clamped at the start
+      expect(earlier.last.startMs, 1500);
+    });
+
+    test('a long held line keeps the screen until it is sung', () {
+      // Line 1 is sung from 1 s to 6 s (a long melody); line 2 is not
+      // recognized; line 3 starts at 8 s.
+      final lines = [
+        LyricLine('يا ليل', 1000, 6000),
+        LyricLine('طوّل شوية'),
+        LyricLine('خليني معاك', 8000),
+      ];
+      final t = Lyrics.timings(lines, 10000);
+      expect(t[0].endMs, 6000);
+      // The missing line waits for the melody to end.
+      expect(t[1].startMs, 6000);
+      expect(Lyrics.activeAt(t, 5500)!.index, 0);
+    });
+
+    test('lines without timing share the gap by length', () {
+      final lines = [
+        LyricLine('a', 0),
+        LyricLine('one two three four five six'),
+        LyricLine('b'),
+        LyricLine('c', 8000),
+      ];
+      final t = Lyrics.timings(lines, 9000);
+      // a (1 word) + 6 words + 1 word over 8 s: 1 s, 6 s, 1 s.
+      expect([for (final x in t) x.startMs], [0, 1000, 7000, 8000]);
+    });
+
     test('frames are quantized and settle after the entrance', () {
       final t = Lyrics.timings([LyricLine('a'), LyricLine('b')], 4000);
       final a = Lyrics.frameAt(t, LyricEffect.fade, 1000)!;
@@ -86,6 +123,23 @@ void main() {
     expect(lines[1].startMs, 4000);
     expect(lines[2].startMs, 7000);
     expect(lines[0].endMs, greaterThan(2000));
+  });
+
+  test('alignment: a line ends where the next begins, backoff is capped', () {
+    CaptionWord w(String t, int at, [int d = 300]) =>
+        (text: t, startMs: at, durationMs: d);
+    final lines = Lyrics.parse(
+        'واحد اثنين ثلاثة اربعة خمسة ستة\nسبعة ثمانية');
+    final heard = [
+      // Only the last word of line 1 heard (recognition misses sung words).
+      w('ستة', 6000),
+      w('سبعة', 6500), w('ثمانية', 7000),
+    ];
+    Lyrics.align(lines, heard);
+    // Backed off at most 1.2 s, not 5 words x 380 ms.
+    expect(lines[0].startMs, 6000 - 1200);
+    // The +700 ms tail of line 1 doesn't run over line 2.
+    expect(lines[0].endMs, lines[1].startMs);
   });
 
   test('arabic normalization', () {
