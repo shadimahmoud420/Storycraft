@@ -217,55 +217,78 @@ class NewsCard extends StatelessWidget {
     );
   }
 
+  TextAlign get _textAlign => switch (profile.align) {
+        NewsAlign.right => TextAlign.right,
+        NewsAlign.center => TextAlign.center,
+        NewsAlign.left => TextAlign.left,
+        NewsAlign.justify => TextAlign.justify,
+      };
+
   Widget _body() {
+    final field = profile.design == NewsDesign.field;
     final style = TextStyle(
       fontFamily: 'Cairo',
-      fontWeight: FontWeight.w700,
+      fontWeight: profile.bold ? FontWeight.w700 : FontWeight.w500,
       height: 1.55,
       color: _ink,
-      shadows: profile.design == NewsDesign.field
+      shadows: field
           ? const [Shadow(color: Color(0x99000000), blurRadius: 8)]
           : null,
     );
     final news = text.trim().isEmpty ? '…' : text.trim();
+    // The accent bar follows the text's alignment.
+    final barAlign = switch (profile.align) {
+      NewsAlign.center => Alignment.center,
+      NewsAlign.left => Alignment.centerLeft,
+      _ => Alignment.centerRight,
+    };
+    final y = profile.textY ?? (field ? 1.0 : 0.5);
     return LayoutBuilder(
       builder: (context, box) {
-        // Room left for the place and date lines.
+        // Room left for the bar and the place and date lines.
         final meta = (location.trim().isNotEmpty ? 26.0 : 0) +
             (profile.showDateTime ? 26.0 : 0) +
+            (field ? 0 : 23) +
             18;
         final area = Size(box.maxWidth, box.maxHeight - meta - 24);
-        final size = fitFontSize(news, style, area, min: 14,
-            max: profile.design == NewsDesign.field ? 34 : 38);
-        final text = Text(news,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.fade, style: style.copyWith(fontSize: size));
-        return Column(
-          mainAxisAlignment: profile.design == NewsDesign.field
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (profile.design != NewsDesign.field)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Container(
-                  width: 54,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 18),
-                  decoration: BoxDecoration(
-                    color: profile.accent,
-                    borderRadius: BorderRadius.circular(3),
+        final base = field ? 34.0 : 38.0;
+        final size = fitFontSize(news, style, area,
+            min: 12, max: base * profile.textScale);
+        return Align(
+          alignment: Alignment(0, y * 2 - 1),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: box.maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!field)
+                  Align(
+                    alignment: barAlign,
+                    child: Container(
+                      width: 54,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: profile.accent,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
                   ),
+                Flexible(
+                  child: Text(news,
+                      textAlign: _textAlign,
+                      overflow: TextOverflow.fade,
+                      style: style.copyWith(fontSize: size)),
                 ),
-              ),
-            Flexible(child: text),
-            const SizedBox(height: 16),
-            if (location.trim().isNotEmpty)
-              _metaLine(Icons.location_on_rounded, location.trim()),
-            if (profile.showDateTime)
-              _metaLine(Icons.schedule_rounded, newsDateLine(date)),
-          ],
+                const SizedBox(height: 16),
+                if (location.trim().isNotEmpty)
+                  _metaLine(Icons.location_on_rounded, location.trim()),
+                if (profile.showDateTime)
+                  _metaLine(Icons.schedule_rounded, newsDateLine(date)),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -274,10 +297,15 @@ class NewsCard extends StatelessWidget {
   Widget _metaLine(IconData icon, String value) => Padding(
         padding: const EdgeInsets.only(top: 4),
         child: Row(
+          mainAxisAlignment: switch (profile.align) {
+            NewsAlign.center => MainAxisAlignment.center,
+            NewsAlign.left => MainAxisAlignment.end,
+            _ => MainAxisAlignment.start,
+          },
           children: [
             Icon(icon, size: 16, color: profile.accent),
             const SizedBox(width: 6),
-            Expanded(
+            Flexible(
               child: Text(value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

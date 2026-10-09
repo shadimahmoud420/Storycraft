@@ -43,28 +43,30 @@ class _SignatureScreenState extends State<SignatureScreen> {
 
   String get _text => _name.text.trim();
 
-  /// 12 suggestions: each font paired with a rotating decoration style.
+  /// 18 suggestions: fonts paired with a rotating decoration style.
   List<StoryLayer> _options(S s) {
     final text = _text.isEmpty ? (s.isArabic ? 'اسمك' : 'Your Name') : _text;
     final fonts = StoryFonts.hasArabic(text) ? _arabicFonts : _englishFonts;
     // Ornamental designs first; each font gets its own decoration.
     const styles = [
+      SignatureStyle.emblem, SignatureStyle.lockup, SignatureStyle.brush,
+      SignatureStyle.arch, SignatureStyle.ribbon, SignatureStyle.corners,
       SignatureStyle.ornate, SignatureStyle.laurel, SignatureStyle.royal,
       SignatureStyle.arabesque, SignatureStyle.swash, SignatureStyle.divider,
       SignatureStyle.sparkle, SignatureStyle.seal, SignatureStyle.monogram,
       SignatureStyle.framed, SignatureStyle.underline, SignatureStyle.plain,
     ];
     return [
-      for (var i = 0; i < fonts.length; i++)
+      for (var i = 0; i < styles.length; i++)
         StoryLayer(
           id: 'opt$i',
           kind: LayerKind.signature,
           text: text,
-          font: StoryFonts.byFamily(fonts[i]),
+          font: StoryFonts.byFamily(fonts[i % fonts.length]),
           fontSize: 40,
           color: _color,
           fill: _fill,
-          signatureStyle: styles[i % styles.length],
+          signatureStyle: styles[i],
         ),
     ];
   }
@@ -120,6 +122,12 @@ class _SignatureScreenState extends State<SignatureScreen> {
         SignatureStyle.arabesque => s.sigArabesque,
         SignatureStyle.divider => s.sigDivider,
         SignatureStyle.sparkle => s.sigSparkle,
+        SignatureStyle.emblem => s.sigEmblem,
+        SignatureStyle.ribbon => s.sigRibbon,
+        SignatureStyle.brush => s.sigBrush,
+        SignatureStyle.lockup => s.sigLockup,
+        SignatureStyle.corners => s.sigCorners,
+        SignatureStyle.arch => s.sigArch,
       };
 
   String _fillLabel(S s, TextFill f) => switch (f) {

@@ -18,6 +18,9 @@ enum NewsDesign {
   paper,
 }
 
+/// How the news text lines up.
+enum NewsAlign { right, center, left, justify }
+
 /// Everything fixed about the user's news posts, set once: who signs them,
 /// how they look. Each post then only needs its text.
 @immutable
@@ -32,6 +35,10 @@ class NewsProfile {
     this.showDateTime = true,
     this.location = '',
     this.tag = 'عاجل',
+    this.textScale = 1,
+    this.align = NewsAlign.right,
+    this.textY,
+    this.bold = true,
   });
 
   /// Reporter / page name shown under every post.
@@ -51,6 +58,15 @@ class NewsProfile {
   final String location;
   final String tag;
 
+  /// News text size, relative to the design's own (0.6 – 1.5).
+  final double textScale;
+  final NewsAlign align;
+
+  /// Where the news sits between the header and the signature, 0 (top) –
+  /// 1 (bottom); null keeps the design's own place.
+  final double? textY;
+  final bool bold;
+
   bool get isSetUp => name.trim().isNotEmpty || signatureId != null;
 
   NewsProfile copyWith({
@@ -65,6 +81,11 @@ class NewsProfile {
     bool? showDateTime,
     String? location,
     String? tag,
+    double? textScale,
+    NewsAlign? align,
+    double? textY,
+    bool clearTextY = false,
+    bool? bold,
   }) =>
       NewsProfile(
         name: name ?? this.name,
@@ -76,6 +97,10 @@ class NewsProfile {
         showDateTime: showDateTime ?? this.showDateTime,
         location: location ?? this.location,
         tag: tag ?? this.tag,
+        textScale: textScale ?? this.textScale,
+        align: align ?? this.align,
+        textY: clearTextY ? null : textY ?? this.textY,
+        bold: bold ?? this.bold,
       );
 
   Map<String, Object?> toJson() => {
@@ -87,6 +112,10 @@ class NewsProfile {
         'showDateTime': showDateTime,
         'location': location,
         'tag': tag,
+        'textScale': textScale,
+        'align': align.name,
+        'textY': textY,
+        'bold': bold,
       };
 
   factory NewsProfile.fromJson(Map<String, Object?> j, {Uint8List? logo}) {
@@ -101,6 +130,10 @@ class NewsProfile {
       showDateTime: j['showDateTime'] as bool? ?? true,
       location: j['location'] as String? ?? '',
       tag: j['tag'] as String? ?? d.tag,
+      textScale: ((j['textScale'] as num?)?.toDouble() ?? 1).clamp(0.6, 1.5),
+      align: NewsAlign.values.asNameMap()[j['align']] ?? d.align,
+      textY: (j['textY'] as num?)?.toDouble(),
+      bold: j['bold'] as bool? ?? true,
     );
   }
 }

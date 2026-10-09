@@ -141,6 +141,17 @@ class _NewsScreenState extends State<NewsScreen> {
     if (mounted) setState(() {});
   }
 
+  /// Size, alignment and place of the news text (kept for next time).
+  Future<void> _openFormat() async {
+    FocusScope.of(context).unfocus();
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      barrierColor: Colors.black12,
+      builder: (_) => const _FormatSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -225,6 +236,11 @@ class _NewsScreenState extends State<NewsScreen> {
                     hintText: s.nwText,
                     border: const OutlineInputBorder(),
                     isDense: true,
+                    suffixIcon: IconButton(
+                      tooltip: s.nwFormat,
+                      onPressed: _openFormat,
+                      icon: const Icon(Icons.format_size_rounded),
+                    ),
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -306,6 +322,101 @@ class _NewsScreenState extends State<NewsScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// News text formatting; every change shows at once on the card above.
+class _FormatSheet extends StatelessWidget {
+  const _FormatSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final theme = Theme.of(context);
+    final store = NewsProfileStore.instance;
+    Widget label(String t) => Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 4),
+          child: Text(t, style: theme.textTheme.titleSmall),
+        );
+    return ValueListenableBuilder<NewsProfile>(
+      valueListenable: store,
+      builder: (context, p, _) {
+        void set(NewsProfile n) => store.save(n);
+        final auto = p.textY == null;
+        final y = p.textY ?? (p.design == NewsDesign.field ? 1.0 : 0.5);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              label(s.nwSize),
+              Row(
+                children: [
+                  const Icon(Icons.text_decrease_rounded, size: 18),
+                  Expanded(
+                    child: Slider(
+                      value: p.textScale,
+                      min: 0.6,
+                      max: 1.5,
+                      divisions: 18,
+                      onChanged: (v) => set(p.copyWith(textScale: v)),
+                    ),
+                  ),
+                  const Icon(Icons.text_increase_rounded, size: 22),
+                ],
+              ),
+              label(s.nwAlign),
+              SegmentedButton<NewsAlign>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(
+                      value: NewsAlign.right,
+                      icon: Icon(Icons.format_align_right_rounded)),
+                  ButtonSegment(
+                      value: NewsAlign.center,
+                      icon: Icon(Icons.format_align_center_rounded)),
+                  ButtonSegment(
+                      value: NewsAlign.left,
+                      icon: Icon(Icons.format_align_left_rounded)),
+                  ButtonSegment(
+                      value: NewsAlign.justify,
+                      icon: Icon(Icons.format_align_justify_rounded)),
+                ],
+                selected: {p.align},
+                onSelectionChanged: (v) => set(p.copyWith(align: v.first)),
+              ),
+              label(s.nwPlace),
+              Row(
+                children: [
+                  Text(s.nwTop, style: theme.textTheme.bodySmall),
+                  Expanded(
+                    child: Slider(
+                      value: y,
+                      divisions: 20,
+                      onChanged: (v) => set(p.copyWith(textY: v)),
+                    ),
+                  ),
+                  Text(s.nwBottom, style: theme.textTheme.bodySmall),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text(s.nwPlaceAuto),
+                    selected: auto,
+                    onSelected: (_) => set(p.copyWith(clearTextY: true)),
+                  ),
+                ],
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(s.nwBold),
+                value: p.bold,
+                onChanged: (v) => set(p.copyWith(bold: v)),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

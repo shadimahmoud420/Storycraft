@@ -182,6 +182,94 @@ class SignatureView extends StatelessWidget {
           ],
         );
 
+      case SignatureStyle.emblem:
+        final d = fs * 4.4;
+        return SizedBox(
+          width: d,
+          height: d,
+          child: CustomPaint(
+            painter: _EmblemPainter(ink, stroke: fs * 0.045),
+            child: Center(
+              child: SizedBox(
+                width: d * 0.7,
+                height: d * 0.42,
+                child: FittedBox(child: name),
+              ),
+            ),
+          ),
+        );
+
+      case SignatureStyle.ribbon:
+        return CustomPaint(
+          painter: _RibbonPainter(ink, stroke: fs * 0.045, drop: fs * 0.42),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(fs * 1.5, fs * 0.22, fs * 1.5, fs * 0.66),
+            child: name,
+          ),
+        );
+
+      case SignatureStyle.brush:
+        return CustomPaint(
+          painter: _BrushPainter(ink),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: fs * 0.75,
+              vertical: fs * 0.4,
+            ),
+            child: name,
+          ),
+        );
+
+      case SignatureStyle.lockup:
+        final initial = layer.text.trim().isEmpty
+            ? '?'
+            : layer.text.trim().characters.first;
+        final initialLayer = layer.copyWith(id: layer.id)
+          ..text = initial
+          ..fontSize = fs * 0.9
+          ..curve = 0;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          textDirection: dir,
+          children: [
+            SizedBox(
+              width: fs * 2,
+              height: fs * 2,
+              child: CustomPaint(
+                painter: _StarPainter(ink, stroke: fs * 0.045),
+                child: Center(
+                  child: StyledText(layer: initialLayer, direction: dir),
+                ),
+              ),
+            ),
+            SizedBox(width: fs * 0.4),
+            Container(width: fs * 0.04, height: fs * 1.5, color: ink),
+            SizedBox(width: fs * 0.4),
+            Flexible(child: name),
+          ],
+        );
+
+      case SignatureStyle.corners:
+        return CustomPaint(
+          painter: _CornersPainter(ink, stroke: fs * 0.05),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: fs * 0.85,
+              vertical: fs * 0.5,
+            ),
+            child: name,
+          ),
+        );
+
+      case SignatureStyle.arch:
+        return CustomPaint(
+          painter: _ArchPainter(ink, stroke: fs * 0.045),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(fs * 0.75, fs * 1.35, fs * 0.75, fs * 0.5),
+            child: name,
+          ),
+        );
+
       case SignatureStyle.sparkle:
         return CustomPaint(
           foregroundPainter: _SparklePainter(ink),
@@ -442,6 +530,261 @@ class _ArabesqueFramePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ArabesqueFramePainter old) =>
+      old.color != color || old.stroke != stroke;
+}
+
+/// Round badge: double ring with a ring of dots, a sparkle above the name
+/// and a small divider below it.
+class _EmblemPainter extends CustomPainter {
+  _EmblemPainter(this.color, {required this.stroke});
+
+  final Color color;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2 - stroke;
+    final fill = Paint()..color = color;
+    canvas.drawCircle(c, r, _stroke(color, stroke));
+    canvas.drawCircle(c, r * 0.84, _stroke(color, stroke * 0.5));
+    const dots = 56;
+    for (var i = 0; i < dots; i++) {
+      final a = 2 * math.pi * i / dots;
+      canvas.drawCircle(
+          c + Offset(math.cos(a), math.sin(a)) * (r * 0.92), stroke * 0.45, fill);
+    }
+    canvas.drawPath(_sparkle(c + Offset(0, -r * 0.6), stroke * 2.6), fill);
+    for (final side in [-1.0, 1.0]) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(c.dx + side * r * 0.08, c.dy + r * 0.6 - stroke * 0.6)
+          ..lineTo(c.dx + side * r * 0.42, c.dy + r * 0.6)
+          ..lineTo(c.dx + side * r * 0.08, c.dy + r * 0.6 + stroke * 0.6)
+          ..close(),
+        fill,
+      );
+    }
+    canvas.drawPath(_sparkle(c + Offset(0, r * 0.6), stroke * 1.4), fill);
+  }
+
+  @override
+  bool shouldRepaint(_EmblemPainter old) =>
+      old.color != color || old.stroke != stroke;
+}
+
+/// Outlined banner with folded, notched tails behind both ends.
+class _RibbonPainter extends CustomPainter {
+  _RibbonPainter(this.color, {required this.stroke, required this.drop});
+
+  final Color color;
+  final double stroke;
+
+  /// How far the tails hang below the band.
+  final double drop;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final line = _stroke(color, stroke);
+    final tail = h * 0.5;
+    final band = Rect.fromLTRB(tail * 0.9, stroke, w - tail * 0.9, h - drop);
+    // The tails pass behind the band.
+    canvas
+      ..save()
+      ..clipPath(Path.combine(PathOperation.difference,
+          Path()..addRect(Offset.zero & size), Path()..addRect(band)));
+    for (final side in [-1.0, 1.0]) {
+      final inner = side < 0 ? band.left + tail * 0.5 : band.right - tail * 0.5;
+      final outer = side < 0 ? stroke : w - stroke;
+      final top = band.top + drop;
+      final bottom = h - stroke;
+      // Tail with a V notch at the end.
+      canvas.drawPath(
+        Path()
+          ..moveTo(inner, top)
+          ..lineTo(outer, top)
+          ..lineTo(outer - side * tail * 0.45, (top + bottom) / 2)
+          ..lineTo(outer, bottom)
+          ..lineTo(inner, bottom),
+        line,
+      );
+      // The fold where the tail tucks under the band.
+      final edge = side < 0 ? band.left : band.right;
+      final fold = Path()
+        ..moveTo(edge, band.bottom)
+        ..lineTo(inner, bottom)
+        ..lineTo(inner, band.bottom)
+        ..close();
+      canvas.drawPath(fold, Paint()..color = color.withValues(alpha: 0.55));
+    }
+    canvas.restore();
+    canvas.drawRect(band, line);
+    canvas.drawRect(
+        band.deflate(stroke * 2.4), _stroke(color, stroke * 0.45));
+  }
+
+  @override
+  bool shouldRepaint(_RibbonPainter old) =>
+      old.color != color || old.stroke != stroke || old.drop != drop;
+}
+
+/// A dry-brush paint swipe behind the name.
+class _BrushPainter extends CustomPainter {
+  _BrushPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final rnd = math.Random(7);
+    canvas
+      ..save()
+      ..translate(w / 2, h / 2)
+      ..rotate(-0.04)
+      ..translate(-w / 2, -h / 2);
+    // Ragged top and bottom edges, a rounded start and a frayed end.
+    const steps = 40;
+    final top = <Offset>[], bottom = <Offset>[];
+    for (var i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final x = w * (0.02 + 0.96 * t);
+      final swell = math.sin(math.pi * math.pow(t, 0.8)) * 0.1;
+      top.add(Offset(x, h * (0.16 - swell) + rnd.nextDouble() * h * 0.05));
+      bottom.add(Offset(x, h * (0.86 + swell * 0.6) - rnd.nextDouble() * h * 0.05));
+    }
+    final path = Path()..moveTo(top.first.dx, top.first.dy);
+    for (final p in top.skip(1)) {
+      path.lineTo(p.dx, p.dy);
+    }
+    for (final p in bottom.reversed) {
+      path.lineTo(p.dx, p.dy);
+    }
+    path.close();
+    canvas.drawPath(path, Paint()..color = color.withValues(alpha: 0.24));
+    // A lighter second pass gives the paint some texture.
+    canvas.drawPath(
+      path.shift(Offset(w * 0.015, h * 0.04)),
+      Paint()..color = color.withValues(alpha: 0.1),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_BrushPainter old) => old.color != color;
+}
+
+/// Eight-pointed star (two overlapping squares) with an inner ring.
+class _StarPainter extends CustomPainter {
+  _StarPainter(this.color, {required this.stroke});
+
+  final Color color;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2 - stroke;
+    final side = r * 1.414;
+    for (final a in [0.0, math.pi / 4]) {
+      canvas
+        ..save()
+        ..translate(c.dx, c.dy)
+        ..rotate(a)
+        ..drawRect(
+            Rect.fromCenter(center: Offset.zero, width: side, height: side),
+            _stroke(color, stroke))
+        ..restore();
+    }
+    canvas.drawCircle(c, r * 0.62, _stroke(color, stroke * 0.5));
+  }
+
+  @override
+  bool shouldRepaint(_StarPainter old) =>
+      old.color != color || old.stroke != stroke;
+}
+
+/// Four corner brackets with a dot at each corner.
+class _CornersPainter extends CustomPainter {
+  _CornersPainter(this.color, {required this.stroke});
+
+  final Color color;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = (Offset.zero & size).deflate(stroke * 3);
+    final len = r.shortestSide * 0.42;
+    final line = _stroke(color, stroke);
+    final fill = Paint()..color = color;
+    for (final (corner, dx, dy) in [
+      (r.topLeft, 1.0, 1.0),
+      (r.topRight, -1.0, 1.0),
+      (r.bottomLeft, 1.0, -1.0),
+      (r.bottomRight, -1.0, -1.0),
+    ]) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(corner.dx + dx * len, corner.dy)
+          ..lineTo(corner.dx, corner.dy)
+          ..lineTo(corner.dx, corner.dy + dy * len),
+        line,
+      );
+      canvas.drawCircle(
+          corner + Offset(-dx, -dy) * (stroke * 2.2), stroke * 0.9, fill);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CornersPainter old) =>
+      old.color != color || old.stroke != stroke;
+}
+
+/// Pointed (Islamic) arch over the name, doubled, with a star at its apex
+/// and a base line ending in dots.
+class _ArchPainter extends CustomPainter {
+  _ArchPainter(this.color, {required this.stroke});
+
+  final Color color;
+  final double stroke;
+
+  Path _arch(Rect r, double spring) {
+    final cx = r.center.dx;
+    final rise = spring - r.top;
+    return Path()
+      ..moveTo(r.left, r.bottom)
+      ..lineTo(r.left, spring)
+      ..cubicTo(r.left, spring - rise * 0.6, cx - r.width * 0.16,
+          r.top + rise * 0.12, cx, r.top)
+      ..cubicTo(cx + r.width * 0.16, r.top + rise * 0.12, r.right,
+          spring - rise * 0.6, r.right, spring)
+      ..lineTo(r.right, r.bottom);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final outer = Rect.fromLTRB(stroke * 2, stroke, w - stroke * 2, h - stroke * 2);
+    final spring = h * 0.5;
+    canvas.drawPath(_arch(outer, spring), _stroke(color, stroke));
+    final gap = stroke * 3.2;
+    canvas.drawPath(
+        _arch(
+            Rect.fromLTRB(outer.left + gap, outer.top + gap * 1.6,
+                outer.right - gap, outer.bottom),
+            spring + gap * 0.4),
+        _stroke(color, stroke * 0.5));
+    final fill = Paint()..color = color;
+    canvas.drawPath(
+        _sparkle(Offset(w / 2, outer.top + h * 0.2), stroke * 2.6), fill);
+    // Base line, a little wider than the arch.
+    canvas.drawLine(Offset(0, outer.bottom), Offset(w, outer.bottom),
+        _stroke(color, stroke));
+  }
+
+  @override
+  bool shouldRepaint(_ArchPainter old) =>
       old.color != color || old.stroke != stroke;
 }
 

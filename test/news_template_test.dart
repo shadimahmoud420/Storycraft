@@ -19,9 +19,18 @@ void main() {
       showDateTime: false,
       location: 'وسط المدينة',
       tag: 'متابعة',
+      textScale: 1.3,
+      align: NewsAlign.center,
+      textY: 0.2,
+      bold: false,
     );
     final back = NewsProfile.fromJson(p.toJson());
     expect(back.toJson(), p.toJson());
+    // Older profiles keep the design's own text layout.
+    final old = NewsProfile.fromJson(const {'name': 'x'});
+    expect((old.textScale, old.align, old.textY, old.bold),
+        (1.0, NewsAlign.right, null, true));
+    expect(p.copyWith(clearTextY: true).textY, isNull);
     expect(const NewsProfile().isSetUp, isFalse);
     expect(p.isSetUp, isTrue);
   });

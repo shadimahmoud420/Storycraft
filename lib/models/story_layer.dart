@@ -19,6 +19,8 @@ enum SignatureStyle {
   swash, plain, underline, seal, monogram, framed,
   // Ornamental styles.
   ornate, laurel, royal, arabesque, divider, sparkle,
+  // Logo-like designs.
+  emblem, ribbon, brush, lockup, corners, arch,
 }
 
 enum ShapeKind { roundedFrame, rectFrame, circleFrame, line, label }

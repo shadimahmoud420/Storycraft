@@ -108,6 +108,14 @@ class S {
   String get nwPaper => _t('nwPaper');
   String get nwShowDate => _t('nwShowDate');
   String get nwText => _t('nwText');
+  String get nwFormat => _t('nwFormat');
+  String get nwSize => _t('nwSize');
+  String get nwAlign => _t('nwAlign');
+  String get nwPlace => _t('nwPlace');
+  String get nwPlaceAuto => _t('nwPlaceAuto');
+  String get nwBold => _t('nwBold');
+  String get nwTop => _t('nwTop');
+  String get nwBottom => _t('nwBottom');
   String get nwLocation => _t('nwLocation');
   String get nwPhoto => _t('nwPhoto');
   String get nwRemovePhoto => _t('nwRemovePhoto');
@@ -380,6 +388,12 @@ class S {
   String get sigArabesque => _t('sigArabesque');
   String get sigDivider => _t('sigDivider');
   String get sigSparkle => _t('sigSparkle');
+  String get sigEmblem => _t('sigEmblem');
+  String get sigRibbon => _t('sigRibbon');
+  String get sigBrush => _t('sigBrush');
+  String get sigLockup => _t('sigLockup');
+  String get sigCorners => _t('sigCorners');
+  String get sigArch => _t('sigArch');
   String get rotation => _t('rotation');
   String get scaleLabel => _t('scaleLabel');
   String get rotateResize => _t('rotateResize');
@@ -481,6 +495,14 @@ class S {
       'nwPaper': 'بطاقة بيضاء',
       'nwShowDate': 'إظهار التاريخ والوقت تلقائيًا',
       'nwText': 'اكتب الخبر هنا…',
+      'nwFormat': 'تنسيق النص',
+      'nwSize': 'حجم الخط',
+      'nwAlign': 'المحاذاة',
+      'nwPlace': 'موضع النص',
+      'nwPlaceAuto': 'تلقائي',
+      'nwBold': 'خط عريض',
+      'nwTop': 'أعلى',
+      'nwBottom': 'أسفل',
       'nwLocation': 'المكان (اختياري)',
       'nwPhoto': 'صورة الخبر',
       'nwRemovePhoto': 'إزالة الصورة',
@@ -646,6 +668,12 @@ class S {
       'sigArabesque': 'إطار عربي',
       'sigDivider': 'فاصل مزخرف',
       'sigSparkle': 'لمعات',
+      'sigEmblem': 'شعار دائري',
+      'sigRibbon': 'شريط',
+      'sigBrush': 'ضربة فرشاة',
+      'sigLockup': 'نجمة واسم',
+      'sigCorners': 'زوايا',
+      'sigArch': 'قوس',
       'rotation': 'الدوران',
       'scaleLabel': 'الحجم',
       'rotateResize': 'الدوران والحجم',
@@ -848,6 +876,14 @@ class S {
       'nwPaper': 'White card',
       'nwShowDate': 'Show date and time automatically',
       'nwText': 'Type the news here…',
+      'nwFormat': 'Text format',
+      'nwSize': 'Text size',
+      'nwAlign': 'Alignment',
+      'nwPlace': 'Text position',
+      'nwPlaceAuto': 'Auto',
+      'nwBold': 'Bold',
+      'nwTop': 'Top',
+      'nwBottom': 'Bottom',
       'nwLocation': 'Place (optional)',
       'nwPhoto': 'News photo',
       'nwRemovePhoto': 'Remove photo',
@@ -1013,6 +1049,12 @@ class S {
       'sigArabesque': 'Arabesque',
       'sigDivider': 'Divider',
       'sigSparkle': 'Sparkle',
+      'sigEmblem': 'Emblem',
+      'sigRibbon': 'Ribbon',
+      'sigBrush': 'Brush',
+      'sigLockup': 'Star lockup',
+      'sigCorners': 'Corners',
+      'sigArch': 'Arch',
       'rotation': 'Rotation',
       'scaleLabel': 'Scale',
       'rotateResize': 'Rotate & size',
