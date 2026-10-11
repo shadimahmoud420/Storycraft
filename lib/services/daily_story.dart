@@ -4,6 +4,7 @@ import '../core/config.dart';
 import '../core/date_text.dart';
 import '../data/daily_texts.dart';
 import '../data/fonts.dart';
+import '../data/history_events.dart';
 import '../data/occasions.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
@@ -87,6 +88,7 @@ class DailyStoryGenerator {
     DailyCategory.wisdom: 'حكمة اليوم',
     DailyCategory.saying: 'من أقوال الحكماء',
     DailyCategory.quote: 'اقتباس اليوم',
+    DailyCategory.history: 'حدث في مثل هذا اليوم',
   };
 
   static const _rotation = [
@@ -104,10 +106,53 @@ class DailyStoryGenerator {
           .difference(DateTime.utc(2024))
           .inDays;
 
+  /// Events of [scope] (all when null), nearest to [date]'s day of the
+  /// year first; same-day events come before the rest.
+  static List<(HistoryEvent, int)> historyFor(DateTime date,
+      [HistoryScope? scope]) {
+    int doy(int m, int d) => DateTime.utc(2024, m, d)
+        .difference(DateTime.utc(2024))
+        .inDays;
+    final today = doy(date.month, date.day);
+    final list = [
+      for (final e in historyEvents)
+        if (scope == null || e.scope == scope)
+          (e, () {
+            final diff = (doy(e.month, e.day) - today).abs();
+            return diff > 183 ? 366 - diff : diff;
+          }()),
+    ];
+    // Stable: equally near events keep the library's order.
+    final indexed = list.indexed.toList()
+      ..sort((a, b) {
+        final c = a.$2.$2.compareTo(b.$2.$2);
+        return c != 0 ? c : a.$1.compareTo(b.$1);
+      });
+    return [for (final x in indexed) x.$2];
+  }
+
+  /// An "on this day" text: the event, dated, under a label that says how
+  /// close to [date] it happened.
+  static (DailyText, String) pickHistory(DateTime date,
+      {HistoryScope? scope, int shift = 0}) {
+    final list = historyFor(date, scope);
+    final (e, away) = list[shift % list.length];
+    final when = DateText.greg(DateTime(e.year, e.month, e.day));
+    final label = switch (away) {
+      0 => 'حدث في مثل هذا اليوم',
+      <= 3 => 'حدث في مثل هذا الأسبوع',
+      _ => 'من ذاكرة التاريخ',
+    };
+    return (DailyText(e.text, '— $when'), label);
+  }
+
   /// The text for [date]: occasion texts first (in auto mode), otherwise
   /// the category rotation. Repeats only after hundreds of days.
   static (DailyText, String) pickText(DateTime date, DayInfo info,
-      {DailyCategory? category, int shift = 0}) {
+      {DailyCategory? category, HistoryScope? scope, int shift = 0}) {
+    if (category == DailyCategory.history) {
+      return pickHistory(date, scope: scope, shift: shift);
+    }
     final day = dayIndex(date);
     if (category == null && info.texts != null) {
       final list = info.texts!;
@@ -121,6 +166,8 @@ class DailyStoryGenerator {
   }
 
   static bool _sacred(String label) =>
+      !label.contains('حدث') &&
+      !label.contains('التاريخ') &&
       !label.contains('حكمة') &&
       !label.contains('اقتباس') &&
       !label.contains('أقوال');
@@ -130,12 +177,14 @@ class DailyStoryGenerator {
     int variant = 0,
     int textShift = 0,
     DailyCategory? category,
+    HistoryScope? scope,
     bool watermark = true,
     DateTime? now,
   }) {
     final info = DayInfo.of(date);
     final (text, label) =
-        pickText(date, info, category: category, shift: textShift);
+        pickText(date, info,
+            category: category, scope: scope, shift: textShift);
     final day = dayIndex(date);
 
     final layout = _Layout.values[(day * 3 + variant) % _Layout.values.length];

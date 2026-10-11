@@ -5,6 +5,7 @@ import '../core/date_text.dart';
 import '../core/strings.dart';
 import '../data/daily_texts.dart';
 import '../data/formats.dart';
+import '../data/history_events.dart';
 import '../services/app_settings.dart';
 import '../services/daily_story.dart';
 import '../services/story_exporter.dart';
@@ -28,6 +29,7 @@ class _DailyScreenState extends State<DailyScreen> {
   int _variant = 0;
   int _shift = 0;
   DailyCategory? _category;
+  HistoryScope? _scope;
   bool _busy = false;
 
   static DateTime get _today {
@@ -42,6 +44,7 @@ class _DailyScreenState extends State<DailyScreen> {
         variant: _variant,
         textShift: _shift,
         category: _category,
+        scope: _scope,
         watermark: AppSettings.instance.value.showWatermark,
       );
 
@@ -232,6 +235,7 @@ class _DailyScreenState extends State<DailyScreen> {
                         (s.catWisdom, DailyCategory.wisdom),
                         (s.catSaying, DailyCategory.saying),
                         (s.catQuote, DailyCategory.quote),
+                        (s.catHistory, DailyCategory.history),
                       ])
                         Padding(
                           padding: const EdgeInsetsDirectional.only(end: 6),
@@ -247,6 +251,35 @@ class _DailyScreenState extends State<DailyScreen> {
                     ],
                   ),
                 ),
+                // "On this day": local, Arab or world events.
+                if (_category == DailyCategory.history)
+                  SizedBox(
+                    height: 44,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                      children: [
+                        for (final (label, scope) in [
+                          (s.scopeAll, null),
+                          (s.scopePalestine, HistoryScope.palestine),
+                          (s.scopeArab, HistoryScope.arab),
+                          (s.scopeWorld, HistoryScope.world),
+                        ])
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 6),
+                            child: ChoiceChip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text(label),
+                              selected: _scope == scope,
+                              onSelected: (_) => setState(() {
+                                _scope = scope;
+                                _shift = 0;
+                              }),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 8),
 
                 // Actions.
