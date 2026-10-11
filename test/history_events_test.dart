@@ -36,11 +36,21 @@ void main() {
     expect(t.text, contains('للطفلة'));
     expect(t.source, '— ١١ أكتوبر ٢٠١٢');
 
-    // No Palestine event on Oct 11: the nearest one (Oct 8) is used.
-    final (p, pLabel) = DailyStoryGenerator.pickHistory(day,
-        scope: HistoryScope.palestine);
-    expect(pLabel, 'حدث في مثل هذا الأسبوع');
-    expect(p.text, contains('الأقصى'));
+    // No Arab event on Oct 11: the nearest one (Oct 13) is used.
+    final (a, aLabel) =
+        DailyStoryGenerator.pickHistory(day, scope: HistoryScope.arab);
+    expect(aLabel, 'حدث في مثل هذا الأسبوع');
+    expect(a.text, contains('محفوظ'));
+
+    // Arab includes Palestine, which comes first among equally near days.
+    final oct29 = DailyStoryGenerator.historyFor(
+        DateTime(2026, 10, 29), HistoryScope.arab);
+    expect(oct29[0].$1.scope, HistoryScope.palestine);
+    expect(oct29[1].$1.scope, HistoryScope.arab);
+    expect(
+        DailyStoryGenerator.historyFor(DateTime(2026, 10, 29),
+            HistoryScope.world).every((x) => x.$1.scope == HistoryScope.world),
+        isTrue);
 
     // "Another text" walks outwards through the year.
     final seen = {

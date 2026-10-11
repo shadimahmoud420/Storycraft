@@ -2,6 +2,7 @@
 /// neutral and factual: no names of organizations or people that platforms
 /// such as Instagram and Facebook restrict, and no praise of violence, so a
 /// story made from these texts can be shared safely.
+/// Palestine events are shown under "Arab", ahead of the others.
 enum HistoryScope { palestine, arab, world }
 
 class HistoryEvent {

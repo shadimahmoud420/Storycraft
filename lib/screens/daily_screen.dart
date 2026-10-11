@@ -251,7 +251,7 @@ class _DailyScreenState extends State<DailyScreen> {
                     ],
                   ),
                 ),
-                // "On this day": local, Arab or world events.
+                // "On this day": Arab (Palestine first) or world events.
                 if (_category == DailyCategory.history)
                   SizedBox(
                     height: 44,
@@ -261,7 +261,6 @@ class _DailyScreenState extends State<DailyScreen> {
                       children: [
                         for (final (label, scope) in [
                           (s.scopeAll, null),
-                          (s.scopePalestine, HistoryScope.palestine),
                           (s.scopeArab, HistoryScope.arab),
                           (s.scopeWorld, HistoryScope.world),
                         ])

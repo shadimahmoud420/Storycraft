@@ -106,29 +106,33 @@ class DailyStoryGenerator {
           .difference(DateTime.utc(2024))
           .inDays;
 
-  /// Events of [scope] (all when null), nearest to [date]'s day of the
-  /// year first; same-day events come before the rest.
+  /// Events of [scope] (all when null; Arab includes Palestine), nearest
+  /// to [date]'s day of the year first. Among equally near events,
+  /// Palestine comes first, then the Arab world, then the world.
   static List<(HistoryEvent, int)> historyFor(DateTime date,
       [HistoryScope? scope]) {
     int doy(int m, int d) => DateTime.utc(2024, m, d)
         .difference(DateTime.utc(2024))
         .inDays;
+    bool inScope(HistoryEvent e) => switch (scope) {
+          null => true,
+          HistoryScope.arab => e.scope != HistoryScope.world,
+          _ => e.scope == scope,
+        };
     final today = doy(date.month, date.day);
     final list = [
-      for (final e in historyEvents)
-        if (scope == null || e.scope == scope)
+      for (final (i, e) in historyEvents.indexed)
+        if (inScope(e))
           (e, () {
             final diff = (doy(e.month, e.day) - today).abs();
             return diff > 183 ? 366 - diff : diff;
-          }()),
-    ];
-    // Stable: equally near events keep the library's order.
-    final indexed = list.indexed.toList()
-      ..sort((a, b) {
-        final c = a.$2.$2.compareTo(b.$2.$2);
-        return c != 0 ? c : a.$1.compareTo(b.$1);
+          }(), i),
+    ]..sort((a, b) {
+        var c = a.$2.compareTo(b.$2);
+        if (c == 0) c = a.$1.scope.index.compareTo(b.$1.scope.index);
+        return c != 0 ? c : a.$3.compareTo(b.$3);
       });
-    return [for (final x in indexed) x.$2];
+    return [for (final x in list) (x.$1, x.$2)];
   }
 
   /// An "on this day" text: the event, dated, under a label that says how

@@ -81,7 +81,6 @@ class S {
   String get catQuote => _t('catQuote');
   String get catHistory => _t('catHistory');
   String get scopeAll => _t('scopeAll');
-  String get scopePalestine => _t('scopePalestine');
   String get scopeArab => _t('scopeArab');
   String get scopeWorld => _t('scopeWorld');
   String get catSaying => _t('catSaying');
@@ -473,7 +472,6 @@ class S {
       'catQuote': 'اقتباس',
       'catHistory': 'في مثل هذا اليوم',
       'scopeAll': 'الكل',
-      'scopePalestine': 'فلسطين وغزة',
       'scopeArab': 'عربي',
       'scopeWorld': 'دولي',
       'catSaying': 'أقوال الحكماء',
@@ -859,7 +857,6 @@ class S {
       'catQuote': 'Quote',
       'catHistory': 'On this day',
       'scopeAll': 'All',
-      'scopePalestine': 'Palestine & Gaza',
       'scopeArab': 'Arab',
       'scopeWorld': 'World',
       'catSaying': 'Sayings',
