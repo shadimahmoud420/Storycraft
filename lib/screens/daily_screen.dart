@@ -59,6 +59,16 @@ class _DailyScreenState extends State<DailyScreen> {
     });
   }
 
+  /// Next text; "on this day" stays on the chosen day.
+  void _anotherText() {
+    if (_category == DailyCategory.history &&
+        DailyStoryGenerator.historyChoices(_date, _scope).$1.length < 2) {
+      _toast(S.of(context).noMoreEvents);
+      return;
+    }
+    setState(() => _shift++);
+  }
+
   void _toast(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
@@ -296,7 +306,7 @@ class _DailyScreenState extends State<DailyScreen> {
                       ),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => setState(() => _shift++),
+                          onPressed: _anotherText,
                           icon: const Icon(Icons.shuffle_rounded),
                           label: FittedBox(child: Text(s.anotherText)),
                         ),

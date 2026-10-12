@@ -36,28 +36,39 @@ void main() {
     expect(t.text, contains('للطفلة'));
     expect(t.source, '— ١١ أكتوبر ٢٠١٢');
 
-    // No Arab event on Oct 11: the nearest one (Oct 13) is used.
+    // No Arab event on Oct 11: that day's other events are offered
+    // rather than another day's.
     final (a, aLabel) =
         DailyStoryGenerator.pickHistory(day, scope: HistoryScope.arab);
-    expect(aLabel, 'حدث في مثل هذا الأسبوع');
-    expect(a.text, contains('محفوظ'));
+    expect(aLabel, 'حدث في مثل هذا اليوم');
+    expect(a.source, contains('١١ أكتوبر'));
 
-    // Arab includes Palestine, which comes first among equally near days.
-    final oct29 = DailyStoryGenerator.historyFor(
+    // Arab includes Palestine, which comes first on the same day.
+    final (oct29, away) = DailyStoryGenerator.historyChoices(
         DateTime(2026, 10, 29), HistoryScope.arab);
-    expect(oct29[0].$1.scope, HistoryScope.palestine);
-    expect(oct29[1].$1.scope, HistoryScope.arab);
-    expect(
-        DailyStoryGenerator.historyFor(DateTime(2026, 10, 29),
-            HistoryScope.world).every((x) => x.$1.scope == HistoryScope.world),
-        isTrue);
+    expect(away, 0);
+    expect([for (final e in oct29) e.scope],
+        [HistoryScope.palestine, HistoryScope.arab]);
 
-    // "Another text" walks outwards through the year.
-    final seen = {
-      for (var i = 0; i < historyEvents.length; i++)
-        DailyStoryGenerator.pickHistory(day, shift: i).$1.text,
-    };
-    expect(seen.length, historyEvents.toSet().map((e) => e.text).length);
+    // "Another text" only moves through the same day's events.
+    for (var i = 0; i < 6; i++) {
+      final (t, l) = DailyStoryGenerator.pickHistory(
+          DateTime(2026, 10, 29), scope: HistoryScope.arab, shift: i);
+      expect(t.source, contains('٢٩ أكتوبر'));
+      expect(l, 'حدث في مثل هذا اليوم');
+    }
+  });
+
+  test('a day without events falls back to the nearest, labelled so', () {
+    final covered = {for (final e in historyEvents) (e.month, e.day)};
+    var d = DateTime(2024, 1, 1);
+    while (covered.contains((d.month, d.day))) {
+      d = d.add(const Duration(days: 1));
+    }
+    final (list, away) = DailyStoryGenerator.historyChoices(d);
+    expect(list, isNotEmpty);
+    expect(away, greaterThan(0));
+    expect(DailyStoryGenerator.pickHistory(d).$2, isNot('حدث في مثل هذا اليوم'));
   });
 
   test('every event fits every layout', () {

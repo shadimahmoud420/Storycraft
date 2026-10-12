@@ -135,12 +135,33 @@ class DailyStoryGenerator {
     return [for (final x in list) (x.$1, x.$2)];
   }
 
+  /// The events offered for [date]: those of that very day in [scope];
+  /// if the scope has none, that day's events of any scope; only when the
+  /// library has nothing for that day, the nearest events. Also returns
+  /// how many days away they are (0 = the same day).
+  static (List<HistoryEvent>, int) historyChoices(DateTime date,
+      [HistoryScope? scope]) {
+    List<HistoryEvent> sameDay(HistoryScope? s) => [
+          for (final (e, away) in historyFor(date, s))
+            if (away == 0) e,
+        ];
+    final own = sameDay(scope);
+    if (own.isNotEmpty) return (own, 0);
+    if (scope != null) {
+      final any = sameDay(null);
+      if (any.isNotEmpty) return (any, 0);
+    }
+    final all = historyFor(date, scope);
+    final nearest = all.first.$2;
+    return ([for (final (e, away) in all) if (away == nearest) e], nearest);
+  }
+
   /// An "on this day" text: the event, dated, under a label that says how
-  /// close to [date] it happened.
+  /// close to [date] it happened. [shift] moves through that day's events.
   static (DailyText, String) pickHistory(DateTime date,
       {HistoryScope? scope, int shift = 0}) {
-    final list = historyFor(date, scope);
-    final (e, away) = list[shift % list.length];
+    final (list, away) = historyChoices(date, scope);
+    final e = list[shift % list.length];
     final when = DateText.greg(DateTime(e.year, e.month, e.day));
     final label = switch (away) {
       0 => 'حدث في مثل هذا اليوم',
