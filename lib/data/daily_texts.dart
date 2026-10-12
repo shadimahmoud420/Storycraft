@@ -2,12 +2,7 @@
 /// hadith texts carry their source only where it is well established;
 /// sayings carry their author ("— name") only when the attribution is
 /// well known; proverbs and quotes are left unattributed.
-enum DailyCategory {
-  dua, dhikr, ayah, wisdom, saying, quote,
-
-  /// "On this day" events (lib/data/history_events.dart), picked by date.
-  history,
-}
+enum DailyCategory { dua, dhikr, ayah, wisdom, saying, quote }
 
 class DailyText {
   const DailyText(this.text, [this.source]);
@@ -26,7 +21,6 @@ class DailyTexts {
         DailyCategory.wisdom => wisdom,
         DailyCategory.saying => saying,
         DailyCategory.quote => quote,
-        DailyCategory.history => const [],
       };
 
   static const dua = <DailyText>[

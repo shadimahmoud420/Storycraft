@@ -79,11 +79,6 @@ class S {
   String get catAyah => _t('catAyah');
   String get catWisdom => _t('catWisdom');
   String get catQuote => _t('catQuote');
-  String get catHistory => _t('catHistory');
-  String get scopeAll => _t('scopeAll');
-  String get scopeArab => _t('scopeArab');
-  String get scopeWorld => _t('scopeWorld');
-  String get noMoreEvents => _t('noMoreEvents');
   String get catSaying => _t('catSaying');
   String get fGlow => _t('fGlow');
   String get fFood => _t('fFood');
@@ -471,11 +466,6 @@ class S {
       'catAyah': 'آية',
       'catWisdom': 'حكمة',
       'catQuote': 'اقتباس',
-      'catHistory': 'في مثل هذا اليوم',
-      'scopeAll': 'الكل',
-      'scopeArab': 'عربي',
-      'scopeWorld': 'دولي',
-      'noMoreEvents': 'لا يوجد حدث آخر في هذا اليوم',
       'catSaying': 'أقوال الحكماء',
       'fGlow': 'Glow',
       'fFood': 'طعام',
@@ -857,11 +847,6 @@ class S {
       'catAyah': 'Verse',
       'catWisdom': 'Wisdom',
       'catQuote': 'Quote',
-      'catHistory': 'On this day',
-      'scopeAll': 'All',
-      'scopeArab': 'Arab',
-      'scopeWorld': 'World',
-      'noMoreEvents': 'No other event on this day',
       'catSaying': 'Sayings',
       'fGlow': 'Glow',
       'fFood': 'Food',

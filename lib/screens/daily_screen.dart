@@ -5,7 +5,6 @@ import '../core/date_text.dart';
 import '../core/strings.dart';
 import '../data/daily_texts.dart';
 import '../data/formats.dart';
-import '../data/history_events.dart';
 import '../services/app_settings.dart';
 import '../services/daily_story.dart';
 import '../services/story_exporter.dart';
@@ -29,7 +28,6 @@ class _DailyScreenState extends State<DailyScreen> {
   int _variant = 0;
   int _shift = 0;
   DailyCategory? _category;
-  HistoryScope? _scope;
   bool _busy = false;
 
   static DateTime get _today {
@@ -44,7 +42,6 @@ class _DailyScreenState extends State<DailyScreen> {
         variant: _variant,
         textShift: _shift,
         category: _category,
-        scope: _scope,
         watermark: AppSettings.instance.value.showWatermark,
       );
 
@@ -57,16 +54,6 @@ class _DailyScreenState extends State<DailyScreen> {
       _variant = 0;
       _shift = 0;
     });
-  }
-
-  /// Next text; "on this day" stays on the chosen day.
-  void _anotherText() {
-    if (_category == DailyCategory.history &&
-        DailyStoryGenerator.historyChoices(_date, _scope).$1.length < 2) {
-      _toast(S.of(context).noMoreEvents);
-      return;
-    }
-    setState(() => _shift++);
   }
 
   void _toast(String m) =>
@@ -245,7 +232,6 @@ class _DailyScreenState extends State<DailyScreen> {
                         (s.catWisdom, DailyCategory.wisdom),
                         (s.catSaying, DailyCategory.saying),
                         (s.catQuote, DailyCategory.quote),
-                        (s.catHistory, DailyCategory.history),
                       ])
                         Padding(
                           padding: const EdgeInsetsDirectional.only(end: 6),
@@ -261,34 +247,6 @@ class _DailyScreenState extends State<DailyScreen> {
                     ],
                   ),
                 ),
-                // "On this day": Arab (Palestine first) or world events.
-                if (_category == DailyCategory.history)
-                  SizedBox(
-                    height: 44,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-                      children: [
-                        for (final (label, scope) in [
-                          (s.scopeAll, null),
-                          (s.scopeArab, HistoryScope.arab),
-                          (s.scopeWorld, HistoryScope.world),
-                        ])
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(end: 6),
-                            child: ChoiceChip(
-                              visualDensity: VisualDensity.compact,
-                              label: Text(label),
-                              selected: _scope == scope,
-                              onSelected: (_) => setState(() {
-                                _scope = scope;
-                                _shift = 0;
-                              }),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
                 const SizedBox(height: 8),
 
                 // Actions.
@@ -306,7 +264,7 @@ class _DailyScreenState extends State<DailyScreen> {
                       ),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _anotherText,
+                          onPressed: () => setState(() => _shift++),
                           icon: const Icon(Icons.shuffle_rounded),
                           label: FittedBox(child: Text(s.anotherText)),
                         ),
