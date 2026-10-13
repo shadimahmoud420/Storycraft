@@ -10,6 +10,7 @@ import '../state/editor_controller.dart';
 import '../data/templates.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
+import '../services/ads.dart';
 import '../services/draft_store.dart';
 import '../services/app_settings.dart';
 import '../services/daily_story.dart';
@@ -50,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ReminderService.instance.sync(title: S.of(context).reminderTitle);
       }
+      // Consent and tracking prompts, then a rewarded ad is preloaded.
+      Ads.init();
     });
   }
 

@@ -2,8 +2,40 @@ import 'package:flutter/material.dart';
 
 import '../core/date_text.dart';
 import '../core/strings.dart';
+import '../services/ads.dart';
 import '../services/app_settings.dart';
 import '../services/reminder_service.dart';
+
+/// Asks before hiding the app mark; with ads, a rewarded ad hides it for
+/// a day.
+Future<void> askHideMark(BuildContext context) async {
+  final s = S.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(s.hideWatermark),
+      content: Text(Ads.enabled ? s.hideMarkAdHint : s.hideWatermarkHint),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(s.cancel),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.pop(context, true),
+          icon: Icon(Ads.enabled
+              ? Icons.ondemand_video_rounded
+              : Icons.visibility_off_rounded),
+          label: Text(Ads.enabled ? s.watchAd : s.hide),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  if (!await AppSettings.instance.hideMark()) {
+    messenger.showSnackBar(SnackBar(content: Text(s.adNotFinished)));
+  }
+}
 
 /// App settings: watermark, Hijri adjustment and the daily reminder.
 Future<void> showSettingsSheet(BuildContext context) {
@@ -69,8 +101,22 @@ class _SettingsSheet extends StatelessWidget {
                   title: Text(s.watermarkSetting),
                   subtitle: Text(s.watermarkHint),
                   value: v.showWatermark,
-                  onChanged: (on) => AppSettings.instance
-                      .update(v.copyWith(showWatermark: on)),
+                  onChanged: (on) => on
+                      ? AppSettings.instance
+                          .update(v.copyWith(showWatermark: true))
+                      : askHideMark(context),
+                ),
+                // Consent choices for EEA / UK users (required by AdMob).
+                FutureBuilder<bool>(
+                  future: Ads.privacyOptionsRequired(),
+                  builder: (context, snap) => snap.data == true
+                      ? ListTile(
+                          leading: const Icon(Icons.privacy_tip_outlined),
+                          title: Text(s.privacyOptions),
+                          subtitle: Text(s.privacyOptionsHint),
+                          onTap: Ads.showPrivacyOptions,
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 const Divider(),
                 SwitchListTile(

@@ -11,6 +11,8 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Daily "story of the day" reminder survives reboots. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- No ads on Android yet: keep the advertising ID out (Play declares "No"). -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
 
     <application
         android:label="StoryCraft"
@@ -37,6 +39,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- The ads SDK needs an app ID to start. Android shows no ads yet, so
+             this is Google's sample ID until the Android ad unit exists. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
         <!-- Scheduled local notifications (flutter_local_notifications). -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">

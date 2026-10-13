@@ -242,6 +242,11 @@ class S {
   String get watermarkHint => _t('watermarkHint');
   String get hideWatermark => _t('hideWatermark');
   String get hideWatermarkHint => _t('hideWatermarkHint');
+  String get hideMarkAdHint => _t('hideMarkAdHint');
+  String get watchAd => _t('watchAd');
+  String get adNotFinished => _t('adNotFinished');
+  String get privacyOptions => _t('privacyOptions');
+  String get privacyOptionsHint => _t('privacyOptionsHint');
   String get hide => _t('hide');
   String get hijriAdjust => _t('hijriAdjust');
   String get hijriAdjustHint => _t('hijriAdjustHint');
@@ -629,6 +634,11 @@ class S {
       'watermarkHint': 'علامة StoryCraft صغيرة أسفل التصميم',
       'hideWatermark': 'إخفاء توقيع التطبيق من التصاميم؟',
       'hideWatermarkHint': 'يمكنك إعادته من الإعدادات في الشاشة الرئيسية',
+      'hideMarkAdHint': 'شاهد إعلانا قصيرا لإخفاء علامة StoryCraft من تصاميمك لمدة ٢٤ ساعة.',
+      'watchAd': 'شاهد الإعلان',
+      'adNotFinished': 'أكمل مشاهدة الإعلان لإخفاء العلامة',
+      'privacyOptions': 'خيارات الخصوصية',
+      'privacyOptionsHint': 'تغيير موافقتك على الإعلانات المخصصة',
       'hide': 'إخفاء',
       'hijriAdjust': 'تعديل التاريخ الهجري',
       'hijriAdjustHint': 'حسب رؤية الهلال في بلدك',
@@ -1010,6 +1020,11 @@ class S {
       'watermarkHint': 'A small StoryCraft mark at the bottom',
       'hideWatermark': 'Hide the app mark from designs?',
       'hideWatermarkHint': 'You can turn it back on in Settings on the home screen',
+      'hideMarkAdHint': 'Watch a short ad to hide the StoryCraft mark from your designs for 24 hours.',
+      'watchAd': 'Watch ad',
+      'adNotFinished': 'Watch the whole ad to hide the mark',
+      'privacyOptions': 'Privacy options',
+      'privacyOptionsHint': 'Change your consent for personalized ads',
       'hide': 'Hide',
       'hijriAdjust': 'Hijri date adjustment',
       'hijriAdjustHint': 'To match the moon sighting in your country',

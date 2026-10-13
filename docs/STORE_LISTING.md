@@ -34,7 +34,7 @@ StoryCraft يساعدك على تصميم قصص أنيقة وجاهزة للن�
 • مشاركة مباشرة في قصة إنستغرام بمقاس 1080×1920
 • حفظ التصميم في معرض الصور، أو مشاركته عبر أي تطبيق آخر
 
-🔒 خصوصيتك محفوظة: لا حسابات ولا جمع بيانات ولا إعلانات.
+🔒 خصوصيتك محفوظة: لا حسابات، وصورك تبقى على جهازك.
 
 ## Full description – English
 StoryCraft helps you design beautiful, ready-to-post stories in seconds.
@@ -59,7 +59,7 @@ StoryCraft helps you design beautiful, ready-to-post stories in seconds.
 • Share straight to your Instagram Story in perfect 1080×1920
 • Save to Photos or share with any app
 
-🔒 Private by design: no accounts, no data collection, no ads.
+🔒 Private by design: no accounts, your photos stay on your device.
 
 *Instagram is a trademark of Instagram, LLC. StoryCraft is not affiliated with or endorsed by Instagram or Meta.*
 

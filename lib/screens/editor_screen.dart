@@ -15,7 +15,6 @@ import '../data/formats.dart';
 import '../data/palettes.dart';
 import '../models/story_background.dart';
 import '../models/story_layer.dart';
-import '../services/app_settings.dart';
 import '../services/background_remover.dart';
 import '../services/brand_kit.dart';
 import '../services/draft_store.dart';
@@ -30,6 +29,7 @@ import '../widgets/filter_sheet.dart';
 import '../widgets/layers_sheet.dart';
 import '../widgets/quotes_sheet.dart';
 import '../widgets/sticker_sheet.dart';
+import '../widgets/settings_sheet.dart';
 import '../widgets/story_canvas.dart';
 import '../widgets/text_editor_sheet.dart';
 import 'brand_kit_screen.dart';
@@ -638,30 +638,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   /// Tapping the app mark offers to turn it off (Settings can restore it).
-  Future<void> _askHideWatermark() async {
-    final s = S.of(context);
-    final hide = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(s.hideWatermark),
-        content: Text(s.hideWatermarkHint),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(s.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(s.hide),
-          ),
-        ],
-      ),
-    );
-    if (hide == true) {
-      final settings = AppSettings.instance;
-      await settings.update(settings.value.copyWith(showWatermark: false));
-    }
-  }
+  Future<void> _askHideWatermark() => askHideMark(context);
 
   void _openLayers() => showLayersSheet(context, _controller);
 
