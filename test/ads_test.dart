@@ -9,7 +9,7 @@ void main() {
     expect(Ads.enabled, isFalse);
     await AppSettings.instance.load();
     expect(AppSettings.instance.value.showWatermark, isTrue);
-    expect(await AppSettings.instance.hideMark(), isTrue);
+    expect(await AppSettings.instance.hideMark(), RewardResult.earned);
     expect(AppSettings.instance.value.showWatermark, isFalse);
     await AppSettings.instance.load();
     expect(AppSettings.instance.value.showWatermark, isFalse);

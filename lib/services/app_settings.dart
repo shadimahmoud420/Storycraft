@@ -92,17 +92,16 @@ class AppSettings extends ValueNotifier<AppSettingsData> {
   }
 
   /// Hides the mark: free without ads, otherwise for a day after a
-  /// rewarded ad. Returns false when the viewer closed the ad early.
-  Future<bool> hideMark() async {
-    if (!Ads.enabled) {
-      await update(value.copyWith(showWatermark: false));
-      return true;
-    }
-    if (!await Ads.showRewarded()) return false;
+  /// rewarded ad. When no ad can be shown the mark is hidden anyway.
+  Future<RewardResult> hideMark() async {
+    final result =
+        Ads.enabled ? await Ads.showRewarded() : RewardResult.earned;
+    if (result == RewardResult.skipped) return result;
     await update(value.copyWith(
       showWatermark: false,
-      markFreeUntil: DateTime.now().add(Ads.markFreeFor),
+      markFreeUntil: Ads.enabled ? DateTime.now().add(Ads.markFreeFor) : null,
     ));
-    return true;
+    return result;
   }
+
 }

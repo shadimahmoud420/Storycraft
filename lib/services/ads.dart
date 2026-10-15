@@ -4,6 +4,19 @@ import 'dart:io';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// How a rewarded ad ended.
+enum RewardResult {
+  /// Watched to the end.
+  earned,
+
+  /// Closed early.
+  skipped,
+
+  /// No ad could be shown (no fill, offline, no consent).
+  unavailable,
+}
 
 /// AdMob: one rewarded ad that hides the StoryCraft mark for a day.
 /// iOS only for now (the Android app has no ad unit yet). Before any ad,
@@ -12,6 +25,33 @@ class Ads {
   Ads._();
 
   static const _rewardedIos = 'ca-app-pub-2043867091759528/8663616669';
+
+  /// Google's always-filled demo unit, for trying the flow safely.
+  static const _rewardedTest = 'ca-app-pub-3940256099942544/1712485313';
+
+  /// Test mode: demo ads instead of real ones (long-press the Settings
+  /// title). Real ads must never be tapped by the developer.
+  static bool testMode = false;
+
+  static String get _unit => testMode ? _rewardedTest : _rewardedIos;
+
+  static Future<void> loadTestMode() async {
+    try {
+      testMode = (await SharedPreferences.getInstance()).getBool('adsTest') ??
+          false;
+    } catch (_) {}
+  }
+
+  static Future<bool> toggleTestMode() async {
+    testMode = !testMode;
+    _rewarded?.dispose();
+    _rewarded = null;
+    try {
+      await (await SharedPreferences.getInstance()).setBool('adsTest', testMode);
+    } catch (_) {}
+    if (_ready != null && await _ready!) unawaited(_load());
+    return testMode;
+  }
 
   /// How long one rewarded ad keeps the mark hidden.
   static const markFreeFor = Duration(hours: 24);
@@ -27,6 +67,7 @@ class Ads {
 
   static Future<bool> _init() async {
     if (!enabled) return false;
+    await loadTestMode();
     try {
       await _gatherConsent();
       if (await AppTrackingTransparency.trackingAuthorizationStatus ==
@@ -70,7 +111,7 @@ class Ads {
   static Future<RewardedAd?> _load() {
     final result = Completer<RewardedAd?>();
     RewardedAd.load(
-      adUnitId: _rewardedIos,
+      adUnitId: _unit,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -84,26 +125,24 @@ class Ads {
     return result.future;
   }
 
-  /// Shows the rewarded ad. True when the reward was earned, or when no ad
-  /// can be shown (no fill, offline, no consent): the user is never stuck.
-  /// False only when the viewer closed the ad early.
-  static Future<bool> showRewarded() async {
-    if (!await init()) return true;
+  /// Shows the rewarded ad and says how it ended.
+  static Future<RewardResult> showRewarded() async {
+    if (!await init()) return RewardResult.unavailable;
     final ad = _rewarded ??
         await _load().timeout(const Duration(seconds: 8), onTimeout: () => null);
-    if (ad == null) return true;
+    if (ad == null) return RewardResult.unavailable;
     _rewarded = null;
     var earned = false;
-    final closed = Completer<bool>();
+    final closed = Completer<RewardResult>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
-        closed.complete(earned);
+        closed.complete(earned ? RewardResult.earned : RewardResult.skipped);
         unawaited(_load());
       },
       onAdFailedToShowFullScreenContent: (ad, _) {
         ad.dispose();
-        closed.complete(true);
+        closed.complete(RewardResult.unavailable);
         unawaited(_load());
       },
     );

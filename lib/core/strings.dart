@@ -245,6 +245,9 @@ class S {
   String get hideMarkAdHint => _t('hideMarkAdHint');
   String get watchAd => _t('watchAd');
   String get adNotFinished => _t('adNotFinished');
+  String get adUnavailable => _t('adUnavailable');
+  String get adsTestOn => _t('adsTestOn');
+  String get adsTestOff => _t('adsTestOff');
   String get privacyOptions => _t('privacyOptions');
   String get privacyOptionsHint => _t('privacyOptionsHint');
   String get hide => _t('hide');
@@ -637,6 +640,9 @@ class S {
       'hideMarkAdHint': 'شاهد إعلانا قصيرا لإخفاء علامة StoryCraft من تصاميمك لمدة ٢٤ ساعة.',
       'watchAd': 'شاهد الإعلان',
       'adNotFinished': 'أكمل مشاهدة الإعلان لإخفاء العلامة',
+      'adUnavailable': 'لا يتوفر إعلان الآن، فأخفينا العلامة دون إعلان',
+      'adsTestOn': 'وضع الإعلانات التجريبية: مفعّل',
+      'adsTestOff': 'وضع الإعلانات التجريبية: متوقف',
       'privacyOptions': 'خيارات الخصوصية',
       'privacyOptionsHint': 'تغيير موافقتك على الإعلانات المخصصة',
       'hide': 'إخفاء',
@@ -1023,6 +1029,9 @@ class S {
       'hideMarkAdHint': 'Watch a short ad to hide the StoryCraft mark from your designs for 24 hours.',
       'watchAd': 'Watch ad',
       'adNotFinished': 'Watch the whole ad to hide the mark',
+      'adUnavailable': 'No ad is available right now, so the mark was hidden without one',
+      'adsTestOn': 'Test ads: on',
+      'adsTestOff': 'Test ads: off',
       'privacyOptions': 'Privacy options',
       'privacyOptionsHint': 'Change your consent for personalized ads',
       'hide': 'Hide',

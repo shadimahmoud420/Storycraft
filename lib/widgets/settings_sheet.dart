@@ -32,9 +32,13 @@ Future<void> askHideMark(BuildContext context) async {
     ),
   );
   if (ok != true) return;
-  if (!await AppSettings.instance.hideMark()) {
-    messenger.showSnackBar(SnackBar(content: Text(s.adNotFinished)));
-  }
+  final result = await AppSettings.instance.hideMark();
+  final note = switch (result) {
+    RewardResult.skipped => s.adNotFinished,
+    RewardResult.unavailable when Ads.enabled => s.adUnavailable,
+    _ => null,
+  };
+  if (note != null) messenger.showSnackBar(SnackBar(content: Text(note)));
 }
 
 /// App settings: watermark, Hijri adjustment and the daily reminder.
@@ -94,7 +98,18 @@ class _SettingsSheet extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(s.settings, style: theme.textTheme.titleLarge),
+                  // Long-press: demo ads for safe testing (iOS).
+                  child: GestureDetector(
+                    onLongPress: !Ads.enabled
+                        ? null
+                        : () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final on = await Ads.toggleTestMode();
+                            messenger.showSnackBar(SnackBar(
+                                content: Text(on ? s.adsTestOn : s.adsTestOff)));
+                          },
+                    child: Text(s.settings, style: theme.textTheme.titleLarge),
+                  ),
                 ),
                 SwitchListTile(
                   secondary: const Icon(Icons.verified_rounded),
