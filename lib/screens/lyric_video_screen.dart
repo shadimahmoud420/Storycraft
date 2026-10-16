@@ -16,8 +16,10 @@ import 'package:video_player/video_player.dart';
 import '../core/strings.dart';
 import '../models/lyrics.dart';
 import '../services/lyric_video_draft.dart';
+import '../services/unlocks.dart';
 import '../services/lyric_video_exporter.dart';
 import '../widgets/lyrics_painter.dart';
+import '../widgets/unlock.dart';
 
 /// Text / highlight color pairs offered for the lyrics.
 const lyricColors = <(Color, Color)>[
@@ -524,6 +526,19 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
     if (!mounted) return;
     Navigator.of(context).pop();
     _toast(message);
+  }
+
+  bool _effectLocked(LyricEffect e) =>
+      premiumLyricEffects.contains(e) &&
+      !Unlocks.instance.isOpen(Premium.lyricEffects);
+
+  /// Applies an effect (or a preset using it), unlocking premium ones first.
+  Future<void> _chooseEffect(LyricEffect e, VoidCallback apply) async {
+    if (_effectLocked(e) &&
+        !await ensureUnlocked(context, Premium.lyricEffects)) {
+      return;
+    }
+    if (mounted) setState(apply);
   }
 
   Future<void> _startSync() async {
@@ -1184,10 +1199,14 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
               Text(s.lvTemplates),
               for (final (label, preset) in lyricPresets(s))
                 ActionChip(
-                  avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  avatar: Icon(
+                      _effectLocked(preset.effect)
+                          ? Icons.lock_rounded
+                          : Icons.auto_awesome_rounded,
+                      size: 16),
                   label: Text(label),
-                  onPressed: () => setState(() =>
-                      _style = preset.copyWith(credit: _style.credit)),
+                  onPressed: () => _chooseEffect(preset.effect,
+                      () => _style = preset.copyWith(credit: _style.credit)),
                 ),
             ],
           ),
@@ -1292,10 +1311,13 @@ class _LyricVideoScreenState extends State<LyricVideoScreen>
             children: [
               for (final e in LyricEffect.values)
                 ChoiceChip(
+                  avatar: _effectLocked(e)
+                      ? const Icon(Icons.lock_rounded, size: 16)
+                      : null,
                   label: Text(lyricEffectLabel(s, e)),
                   selected: _style.effect == e,
-                  onSelected: (_) =>
-                      setState(() => _style = _style.copyWith(effect: e)),
+                  onSelected: (_) => _chooseEffect(
+                      e, () => _style = _style.copyWith(effect: e)),
                 ),
             ],
           ),

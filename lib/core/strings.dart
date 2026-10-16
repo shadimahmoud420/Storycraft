@@ -246,6 +246,12 @@ class S {
   String get watchAd => _t('watchAd');
   String get adNotFinished => _t('adNotFinished');
   String get adUnavailable => _t('adUnavailable');
+  String get premiumSignatures => _t('premiumSignatures');
+  String get premiumSurfaces => _t('premiumSurfaces');
+  String get premiumLyrics => _t('premiumLyrics');
+  String get unlockHint => _t('unlockHint');
+  String get unlocked => _t('unlocked');
+  String get unlockedNoAd => _t('unlockedNoAd');
   String get adsTestOn => _t('adsTestOn');
   String get adsTestOff => _t('adsTestOff');
   String get privacyOptions => _t('privacyOptions');
@@ -641,6 +647,12 @@ class S {
       'watchAd': 'شاهد الإعلان',
       'adNotFinished': 'أكمل مشاهدة الإعلان لإخفاء العلامة',
       'adUnavailable': 'لا يتوفر إعلان الآن، فأخفينا العلامة دون إعلان',
+      'premiumSignatures': 'تصاميم التواقيع المميزة',
+      'premiumSurfaces': 'الخلفيات المميزة',
+      'premiumLyrics': 'مؤثرات الكلمات المميزة',
+      'unlockHint': 'شاهد إعلانا قصيرا لفتحها لمدة ٢٤ ساعة.',
+      'unlocked': 'تم الفتح لمدة ٢٤ ساعة ✓',
+      'unlockedNoAd': 'لا يتوفر إعلان الآن، فتحناها لك لمدة ٢٤ ساعة',
       'adsTestOn': 'وضع الإعلانات التجريبية: مفعّل',
       'adsTestOff': 'وضع الإعلانات التجريبية: متوقف',
       'privacyOptions': 'خيارات الخصوصية',
@@ -1030,6 +1042,12 @@ class S {
       'watchAd': 'Watch ad',
       'adNotFinished': 'Watch the whole ad to hide the mark',
       'adUnavailable': 'No ad is available right now, so the mark was hidden without one',
+      'premiumSignatures': 'Premium signature designs',
+      'premiumSurfaces': 'Premium backdrops',
+      'premiumLyrics': 'Premium lyric effects',
+      'unlockHint': 'Watch a short ad to open them for 24 hours.',
+      'unlocked': 'Opened for 24 hours ✓',
+      'unlockedNoAd': 'No ad is available right now, so they are open for 24 hours',
       'adsTestOn': 'Test ads: on',
       'adsTestOff': 'Test ads: off',
       'privacyOptions': 'Privacy options',

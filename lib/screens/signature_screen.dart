@@ -4,8 +4,10 @@ import '../core/strings.dart';
 import '../data/fonts.dart';
 import '../models/story_layer.dart';
 import '../services/signature_store.dart';
+import '../services/unlocks.dart';
 import '../widgets/color_picker.dart';
 import '../widgets/signature_view.dart';
+import '../widgets/unlock.dart';
 
 /// Signature studio: type a name, pick one of the generated designs,
 /// adjust style and color, save. Pops with the chosen signature layer.
@@ -138,8 +140,21 @@ class _SignatureScreenState extends State<SignatureScreen> {
         TextFill.rose => s.fillRose,
       };
 
+  bool _locked(SignatureStyle st) =>
+      premiumSignatureStyles.contains(st) &&
+      !Unlocks.instance.isOpen(Premium.signatures);
+
+  /// Picks a design or decoration, asking to unlock premium ones first.
+  Future<void> _choose(SignatureStyle st, VoidCallback apply) async {
+    if (_locked(st) && !await ensureUnlocked(context, Premium.signatures)) {
+      return;
+    }
+    if (mounted) setState(apply);
+  }
+
   Widget _card(StoryLayer sig, {bool selected = false, bool dimmed = false,
-      VoidCallback? onTap, VoidCallback? onLongPress, double height = 110}) {
+      bool locked = false, VoidCallback? onTap, VoidCallback? onLongPress,
+      double height = 110}) {
     const accent = Color(0xFF7B4DFF);
     return GestureDetector(
       onTap: onTap,
@@ -178,6 +193,12 @@ class _SignatureScreenState extends State<SignatureScreen> {
                 ),
                 child: Center(child: FittedBox(child: SignatureView(layer: sig))),
               ),
+              if (locked)
+                const PositionedDirectional(
+                  top: 6,
+                  end: 6,
+                  child: LockBadge(),
+                ),
               // Check badge on the chosen design.
               if (selected)
                 PositionedDirectional(
@@ -321,7 +342,8 @@ class _SignatureScreenState extends State<SignatureScreen> {
                   options[i],
                   selected: _selected == i,
                   dimmed: _selected != null && _selected != i,
-                  onTap: () => setState(() {
+                  locked: _locked(options[i].signatureStyle),
+                  onTap: () => _choose(options[i].signatureStyle, () {
                     _selected = i;
                     _styleOverride = null;
                   }),
@@ -337,9 +359,13 @@ class _SignatureScreenState extends State<SignatureScreen> {
                   children: [
                     for (final st in SignatureStyle.values)
                       ChoiceChip(
+                        avatar: _locked(st)
+                            ? const Icon(Icons.lock_rounded, size: 16)
+                            : null,
                         label: Text(_styleLabel(s, st)),
                         selected: current.signatureStyle == st,
-                        onSelected: (_) => setState(() => _styleOverride = st),
+                        onSelected: (_) =>
+                            _choose(st, () => _styleOverride = st),
                       ),
                   ],
                 ),

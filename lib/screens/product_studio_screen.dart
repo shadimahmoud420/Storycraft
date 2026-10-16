@@ -13,8 +13,10 @@ import 'package:share_plus/share_plus.dart';
 import '../core/strings.dart';
 import '../data/surfaces.dart';
 import '../models/story_background.dart';
+import '../services/unlocks.dart';
 import '../services/background_remover.dart';
 import '../services/image_processing.dart';
+import '../widgets/unlock.dart';
 import '../widgets/product_scene.dart';
 import 'editor_screen.dart';
 
@@ -324,12 +326,21 @@ class _ProductStudioScreenState extends State<ProductStudioScreen> {
             _SurfaceTile(
               label: surface.label(s.isArabic),
               selected: _customBackground == null && surface == _surface,
-              onTap: () => setState(() {
-                final moved = _surface.floor != surface.floor;
-                _surface = surface;
-                _customBackground = null;
-                if (moved) _placeDefault();
-              }),
+              locked: isPremiumSurface(surface) &&
+                  !Unlocks.instance.isOpen(Premium.surfaces),
+              onTap: () async {
+                if (isPremiumSurface(surface) &&
+                    !await ensureUnlocked(context, Premium.surfaces)) {
+                  return;
+                }
+                if (!mounted) return;
+                setState(() {
+                  final moved = _surface.floor != surface.floor;
+                  _surface = surface;
+                  _customBackground = null;
+                  if (moved) _placeDefault();
+                });
+              },
               child: Image.asset(surface.asset,
                   fit: BoxFit.cover, cacheWidth: 120),
             ),
@@ -393,10 +404,12 @@ class _SurfaceTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.child,
+    this.locked = false,
   });
 
   final String label;
   final bool selected;
+  final bool locked;
   final VoidCallback onTap;
   final Widget child;
 
@@ -421,7 +434,18 @@ class _SurfaceTile extends StatelessWidget {
                   width: selected ? 3 : 1,
                 ),
               ),
-              child: SizedBox.expand(child: child),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  child,
+                  if (locked)
+                    const PositionedDirectional(
+                      top: 4,
+                      end: 4,
+                      child: LockBadge(size: 18),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 4),
             Text(label,

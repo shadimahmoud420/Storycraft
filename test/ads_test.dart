@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:storycraft/services/ads.dart';
 import 'package:storycraft/services/app_settings.dart';
+import 'package:storycraft/services/unlocks.dart';
 
 void main() {
   test('without ads (Android, tests) the mark hides for good, for free', () async {
@@ -23,5 +24,18 @@ void main() {
     });
     await AppSettings.instance.load();
     expect(AppSettings.instance.value.markFreeUntil, until);
+  });
+
+  test('premium extras: open without ads; a grant lasts a day', () async {
+    SharedPreferences.setMockInitialValues({});
+    await Unlocks.instance.load();
+    for (final p in Premium.values) {
+      expect(Unlocks.instance.isOpen(p), isTrue); // no ads in tests
+    }
+    final now = DateTime(2026, 10, 16, 12);
+    await Unlocks.instance.grant(Premium.surfaces, now: now);
+    await Unlocks.instance.load();
+    expect(Unlocks.instance.value[Premium.surfaces],
+        now.add(const Duration(hours: 24)));
   });
 }

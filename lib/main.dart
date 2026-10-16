@@ -7,6 +7,7 @@ import 'services/app_settings.dart';
 import 'services/brand_kit.dart';
 import 'services/news_profile.dart';
 import 'services/signature_store.dart';
+import 'services/unlocks.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,5 +18,6 @@ Future<void> main() async {
   await BrandKitStore.instance.load();
   await SignatureStore.instance.load();
   await NewsProfileStore.instance.load();
+  await Unlocks.instance.load();
   runApp(StoryCraftApp(localeController: locale));
 }
